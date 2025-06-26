@@ -86,19 +86,27 @@ This file provides essential guidance to Claude Code (claude.ai/code) when worki
 - ✅ **RESTful API**: Flask後端，完整錯誤處理和日誌記錄
 
 ### 🔄 **當前工作狀態**
-正在完成React前端剩餘組件和圖表可視化功能。
+✅ **核心功能已完成** - 前後端整合完畢，系統已可正常運行於開發環境
+🚧 **待完成項目** - 自動化測試、生產環境部署、功能優化
 
-### 🎯 **DEVELOPMENT STATUS**
-- **Project Setup**: ✅ Complete
-- **Backend API**: ✅ Complete
-- **Data Sources**: ✅ Complete  
-- **Data Normalization**: ✅ Complete
-- **Valuation Engines**: ✅ Complete
-- **Frontend Framework**: ✅ Complete
-- **Real Data Integration**: ✅ Complete
-- **Frontend Components**: 🚧 In Progress
-- **Testing**: 🚧 Pending
-- **Documentation**: ✅ Complete
+### 🎯 **開發狀態** (更新於 2025-06-26)
+- **專案設置**: ✅ 已完成
+- **後端API系統**: ✅ 已完成 (Flask + RESTful 端點)
+- **數據源整合**: ✅ 已完成 (Yahoo Finance + Alpha Vantage + FMP)
+- **數據標準化**: ✅ 已完成
+- **估值引擎**: ✅ 已完成 (CCA + DCF + PTA + 資產基礎法)
+- **前端框架**: ✅ 已完成 (Next.js 14 + TypeScript + TailwindCSS)
+- **核心前端組件**: ✅ 已完成 (StockSearch, AnalysisResult, Header)
+- **圖表可視化**: ✅ 已完成 (ValuationComparisonChart with Recharts)
+- **真實數據整合**: ✅ 已完成 (API客戶端 + 錯誤處理)
+- **環境配置**: ✅ 已完成 (.env 設置與API密鑰)
+- **Git版本控制**: ✅ 已完成 (GitHub倉庫與歷史清理)
+- **前後端整合**: ✅ 已完成 (CORS + API通信)
+- **類型安全**: ✅ 已完成 (完整TypeScript實現)
+- **服務部署**: ✅ 已完成 (開發環境運行正常)
+- **測試驗證**: 🚧 手動測試完成，自動化測試待完成
+- **生產部署**: 🚧 待完成
+- **文檔撰寫**: ✅ 已完成
 
 ## 🎯 RULE COMPLIANCE CHECK
 
@@ -138,65 +146,101 @@ Edit(file_path="existing_feature.py", old_string="...", new_string="...")
 
 ---
 
-## 🚀 COMMON COMMANDS
+## 🚀 **常用指令**
 
+### 📱 **開發環境啟動**
 ```bash
-# 啟動開發環境
-python src/run_backend.py          # 後端 (端口8000)
+# 1. 設置環境變數 (複製.env.example為.env並填入API密鑰)
+cp .env.example .env
+
+# 2. 安裝依賴
+uv sync                           # Python 後端依賴
+cd src/frontend && npm install    # Node.js 前端依賴
+
+# 3. 啟動服務
+uv run python src/run_backend.py  # 後端 (端口8000)
 cd src/frontend && npm run dev     # 前端 (端口3000)
-
-# 測試命令
-python -m pytest tests/                    # 運行後端測試
-python tests/test_data_normalization.py    # 測試數據標準化
-cd src/frontend && npm test                # 前端測試
-
-# 數據驗證
-python -c "from src.backend.data.real_data_fetcher import RealStockDataFetcher; f = RealStockDataFetcher(); print(f.fetch_stock_data('AAPL'))"
-
-# 構建部署
-cd src/frontend && npm run build    # 構建前端
-uv sync    # 安裝依賴
 ```
 
-## 📋 **REMAINING TASKS (Priority Order)**
+### 🧪 **測試指令**
+```bash
+# 後端測試
+uv run python -m pytest tests/                    # 運行所有後端測試
+uv run python tests/test_data_normalization.py    # 測試數據標準化
 
-### 🔥 **HIGH PRIORITY**
-1. **為完整分析結果集成ValuationComparisonChart圖表**
-2. **運行完整的前後端整合測試**
-3. **優化API性能** (緩存機制、並發處理)
+# 前端測試
+cd src/frontend && npm test                # 前端單元測試
+cd src/frontend && npm run type-check     # TypeScript 類型檢查
+```
 
-### 🔧 **MEDIUM PRIORITY**  
-4. **創建投資組合功能** (多股票追蹤和管理)
-6. **完善測試覆蓋** (單元測試、集成測試、E2E測試)
+### 🔍 **驗證指令**
+```bash
+# API健康檢查
+curl http://localhost:8000/api/health
 
-### 💡 **LOW PRIORITY**
-7. **用戶認證系統** (登錄、個人化設置)
-8. **實時數據更新** (WebSocket連接)
-9. **集成更多數據源** (Bloomberg, Reuters等)
-10. **添加技術指標** (移動平均線、RSI等)
+# 數據源測試
+curl http://localhost:8000/api/data_sources
+
+# 股票分析測試
+curl -X POST http://localhost:8000/api/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"symbol":"AAPL","analysis_type":"quick","data_source":"yahoo_finance"}'
+```
+
+### 🏗️ **建置部署**
+```bash
+cd src/frontend && npm run build    # 建置前端生產版本
+cd src/frontend && npm run start    # 啟動前端生產服務
+```
+
+## 📋 **剩餘任務** (優先順序排列)
+
+### 🔥 **高優先級** 
+1. **自動化測試套件** (單元測試、整合測試、E2E測試)
+2. **生產環境部署** (Docker容器化、CI/CD流程)
+3. **API性能優化** (緩存機制、並發處理、速率限制)
+4. **錯誤監控和日誌** (詳細錯誤追蹤、性能監控)
+
+### 🔧 **中優先級**  
+5. **投資組合功能** (多股票追蹤和管理)
+6. **數據緩存系統** (Redis緩存、API請求優化)
+7. **批量分析功能優化** (並行處理、進度追蹤)
+8. **響應式設計改進** (手機端適配、觸控優化)
+
+### 💡 **低優先級**
+9. **用戶認證系統** (登錄、個人化設置、用戶偏好)
+10. **實時數據更新** (WebSocket連接、即時價格更新)
+11. **更多數據源整合** (Bloomberg, Reuters, Quandl等)
+12. **技術指標擴展** (移動平均線、RSI、MACD等)
+13. **高級分析功能** (Monte Carlo模擬、情境分析)
+14. **導出功能** (PDF報告、Excel匯出)
 
 ---
 
 ## 📝 **SESSION HISTORY & COMPACT RECORDS**
 
 ### 🔄 **最近完成的工作 (2025-06-26)**
-- ✅ **MCP Playwright 功能移除**: 成功從專案中移除所有 Playwright 相關依賴
-  - 移除的套件: `@playwright/mcp`, `@playwright/test`, `playwright`
-  - 清理並重新安裝 frontend 依賴
-  - 使用 `uv` 管理 Python 環境，避免影響系統環境, 不要再使用 pip 的方式，使用 uv
-- ✅ **系統測試驗證**: 確認前後端服務正常運行
-  - 後端: 運行於 port 8000，API 端點正常
-  - 前端: 運行於 port 3002，服務正常
-  - 整合測試: AAPL 股票分析 API 測試成功
-- ✅ **MarketOverview組件評估**: 分析現有功能後決定取消MarketOverview組件
-  - 原因: StockSearch組件已包含所有MarketOverview功能
-  - 三個數據源 (Yahoo Finance, Alpha Vantage, FMP) 狀態顯示已完整
-  - 數據源選擇、可用性檢查、功能說明已在StockSearch中實現
-  - 避免重複功能，保持代碼簡潔
-- ✅ **規則更新**: 更新CLAUDE.md規則確保使用uv而非pip
-  - 添加絕對禁止使用pip的規則
-  - 添加強制使用uv的要求 (uv sync, uv run, uv add)
-  - 防止系統Python環境污染
+- ✅ **核心系統完成**: iBank投資分析工具主要功能已全部完成
+  - 後端API系統: Flask + RESTful端點 + 四種估值引擎
+  - 前端UI系統: Next.js 14 + TypeScript + TailwindCSS
+  - 圖表可視化: Recharts整合，估值比較圖表
+  - 數據源整合: Yahoo Finance + Alpha Vantage + FMP三重數據源
+  - 環境配置: .env檔案設置，API密鑰管理
+- ✅ **前後端整合**: 完整的API通信和錯誤處理
+  - CORS配置正確，支援跨域請求
+  - API客戶端完整實現 (axios + 攔截器)
+  - 錯誤處理和使用者提示系統
+  - 前端: http://localhost:3000，後端: http://localhost:8000
+- ✅ **系統穩定性**: 開發環境部署和測試驗證
+  - 手動測試完成，AAPL股票分析功能正常
+  - Git版本控制，GitHub倉庫同步
+  - 依賴管理: 前端npm，後端uv環境管理
+  - 代碼品質: TypeScript完整類型安全
+- ✅ **技術債務預防**: 遵循最佳實踐和代碼規範
+  - 單一來源真實性原則
+  - 適當的模組化結構
+  - 環境隔離和依賴管理
+  - 文檔維護和版本控制
 
 ### 🎯 **Session Management 最佳實踐**
 - 使用 `/compact` 指令管理長對話上下文
