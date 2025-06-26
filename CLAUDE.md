@@ -155,14 +155,14 @@ python -c "from src.backend.data.real_data_fetcher import RealStockDataFetcher; 
 
 # 構建部署
 cd src/frontend && npm run build    # 構建前端
-pip install -r requirements.txt     # 安裝依賴
+uv sync    # 安裝依賴
 ```
 
 ## 📋 **REMAINING TASKS (Priority Order)**
 
 ### 🔥 **HIGH PRIORITY**
-1. **完成React前端組件** (AnalysisResult, MarketOverview, 圖表組件)
-2. **添加圖表可視化** (估值比較圖、趨勢分析圖)
+1. **為完整分析結果集成ValuationComparisonChart圖表**
+2. **運行完整的前後端整合測試**
 3. **優化API性能** (緩存機制、並發處理)
 
 ### 🔧 **MEDIUM PRIORITY**  
@@ -188,6 +188,15 @@ pip install -r requirements.txt     # 安裝依賴
   - 後端: 運行於 port 8000，API 端點正常
   - 前端: 運行於 port 3002，服務正常
   - 整合測試: AAPL 股票分析 API 測試成功
+- ✅ **MarketOverview組件評估**: 分析現有功能後決定取消MarketOverview組件
+  - 原因: StockSearch組件已包含所有MarketOverview功能
+  - 三個數據源 (Yahoo Finance, Alpha Vantage, FMP) 狀態顯示已完整
+  - 數據源選擇、可用性檢查、功能說明已在StockSearch中實現
+  - 避免重複功能，保持代碼簡潔
+- ✅ **規則更新**: 更新CLAUDE.md規則確保使用uv而非pip
+  - 添加絕對禁止使用pip的規則
+  - 添加強制使用uv的要求 (uv sync, uv run, uv add)
+  - 防止系統Python環境污染
 
 ### 🎯 **Session Management 最佳實踐**
 - 使用 `/compact` 指令管理長對話上下文
@@ -196,8 +205,8 @@ pip install -r requirements.txt     # 安裝依賴
 
 ### 🔧 **技術債務預防成果**
 - 成功避免創建重複檔案
-- 使用適當的環境管理工具 (uv vs pip)
-- 遵循專案配置檔案結構 (pyproject.toml vs requirements.txt)
+- 使用適當的環境管理工具 (uv)
+- 遵循專案配置檔案結構 (pyproject.toml)
 
 ---
 
