@@ -89,7 +89,7 @@ This file provides essential guidance to Claude Code (claude.ai/code) when worki
 ✅ **核心功能已完成** - 前後端整合完畢，系統已可正常運行於開發環境
 🚧 **待完成項目** - 自動化測試、生產環境部署、功能優化
 
-### 🎯 **開發狀態** (更新於 2025-06-26)
+### 🎯 **開發狀態** (更新於 2025-06-27)
 - **專案設置**: ✅ 已完成
 - **後端API系統**: ✅ 已完成 (Flask + RESTful 端點)
 - **數據源整合**: ✅ 已完成 (Yahoo Finance + Alpha Vantage + FMP)
@@ -104,7 +104,10 @@ This file provides essential guidance to Claude Code (claude.ai/code) when worki
 - **前後端整合**: ✅ 已完成 (CORS + API通信)
 - **類型安全**: ✅ 已完成 (完整TypeScript實現)
 - **服務部署**: ✅ 已完成 (開發環境運行正常)
-- **測試驗證**: 🚧 手動測試完成，自動化測試待完成
+- **品牌重塑**: ✅ 已完成 (iBank → CapitalCore專業品牌升級)
+- **數據驗證增強**: ✅ 已完成 (透明計算過程 + 現代UI/UX)
+- **API數據追蹤**: ✅ 已完成 (原始數據完整記錄 + 一鍵複製)
+- **測試驗證**: ✅ 手動測試完成並通過，🚧 自動化測試待完成
 - **生產部署**: 🚧 待完成
 - **文檔撰寫**: ✅ 已完成
 
@@ -258,19 +261,31 @@ cd src/frontend && npm run start    # 啟動前端生產服務
 - 使用適當的環境管理工具 (uv)
 - 遵循專案配置檔案結構 (pyproject.toml)
 
-### 📊 **當前工作階段成果詳細記錄**
-- **主要成就**: 數據驗證功能完整實現，提升投資分析透明度
-- **技術實現**:
-  - 後端模組增強: `dcf_analyzer.py`, `cca_analyzer.py`, `yahoo_finance_fetcher.py`
-  - API層優化: `web_app.py`, `analysis_engine.py` 增加詳細數據返回
-  - 前端組件改進: `data-verification.tsx` 顯示實際計算數值
-  - 類型定義擴展: `types.py` 新增 calculation_details 和 raw_data_sources 字段
-- **用戶體驗提升**:
-  - 估值方法顯示具體數值: WACC=8.00%, 終值=X億, 同業P/E=25.2x
-  - 原始Yahoo Finance API數據完整展示: 150+個info字段和歷史價格數據
-  - 計算過程完全透明化: 每個變數都有實際數值而非公式符號
-  - API數據流向清晰追蹤: 從原始數據到最終推薦的完整路徑
-- **服務狀態**: 前後端服務運行正常，所有功能測試通過
+### 📊 **當前工作階段成果詳細記錄** (更新於 2025-06-27)
+- ✅ **品牌重塑完成**: 從"iBank"全面升級為"CapitalCore"專業投資銀行品牌
+  - 專案文檔更新: CLAUDE.md, README.md, pyproject.toml, .env.example
+  - 後端系統重命名: 所有Python檔案註釋、API訊息、計算引擎引用
+  - 前端品牌升級: Header組件、數據驗證組件、API客戶端、工具函數
+  - 配置檔案更新: 啟動腳本、環境變量、main.py入口點
+  - 驗證完成: 全代碼庫搜尋確認無殘留"iBank"引用
+- ✅ **服務測試驗證**: 品牌更新後系統功能完全正常
+  - 後端API服務: 健康檢查通過，端口8000正常運行
+  - 前端Next.js服務: HTTP 200響應，端口3000正常訪問
+  - 股票分析功能: AAPL快速分析成功 (推薦：持有，價格：$201.0)
+  - 數據源狀態: Yahoo Finance可用，FMP可用，Alpha Vantage配額已用完
+  - 完整分析測試: 3種估值方法正常返回詳細計算數據
+- ✅ **數據驗證功能增強** (前期工作階段完成)
+  - 後端估值引擎增強: DCF與CCA分析包含詳細計算數值
+  - 原始API數據追蹤: Yahoo Finance響應數據完整記錄
+  - 前端數據驗證組件: 顯示所有計算變數實際數值，移除滾動條UX問題
+  - 計算透明度提升: WACC、終值、同業倍數等完整計算過程
+  - 一鍵複製功能: 獨立按鈕狀態，JSON數據完整複製
+- ✅ **技術架構優化**:
+  - 數據一致性修復: 解決Yahoo Finance API錯誤數據顯示問題
+  - 現代UI/UX實現: 卡片式展開設計，默認展開重要數據區塊
+  - API數據流優化: raw_api_data與calculation_details完整傳輸
+  - TanStack Query開發工具: 前端API狀態監控和緩存管理
+- **當前專案狀態**: 🟢 CapitalCore投資分析平台功能完整，品牌專業，服務穩定運行
 
 ---
 
