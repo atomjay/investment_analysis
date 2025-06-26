@@ -69,6 +69,75 @@ class DCFAnalyzer:
             target_stock, assumptions, projected_fcf, enterprise_value, equity_value
         )
         
+        # 準備詳細計算數據
+        calculation_details = {
+            "wacc_calculation": {
+                "wacc": assumptions.wacc,
+                "explanation": f"WACC = {assumptions.wacc:.2%} (使用預設值)",
+                "components": {
+                    "risk_free_rate": 0.04,  # 假設4%
+                    "market_risk_premium": 0.06,  # 假設6%
+                    "beta": 1.0,  # 假設Beta=1
+                    "cost_of_debt": 0.05,  # 假設5%
+                    "tax_rate": assumptions.tax_rate,
+                    "debt_to_total_value": (target_stock.total_debt or 0) / (enterprise_value + (target_stock.total_debt or 0)),
+                    "equity_to_total_value": enterprise_value / (enterprise_value + (target_stock.total_debt or 0))
+                }
+            },
+            "projected_cash_flows": {
+                "base_revenue": target_stock.revenue,
+                "projections": []
+            },
+            "terminal_value_calculation": {
+                "final_year_fcf": projected_fcf[-1],
+                "terminal_growth_rate": assumptions.terminal_growth_rate,
+                "terminal_fcf": projected_fcf[-1] * (1 + assumptions.terminal_growth_rate),
+                "terminal_value": terminal_value,
+                "pv_terminal_value": pv_of_terminal_value
+            },
+            "valuation_summary": {
+                "pv_projected_fcf": pv_of_projected_fcf,
+                "pv_terminal_value": pv_of_terminal_value,
+                "enterprise_value": enterprise_value,
+                "net_debt": net_debt,
+                "equity_value": equity_value,
+                "shares_outstanding": shares_outstanding,
+                "value_per_share": target_price_per_share
+            }
+        }
+        
+        # 填充現金流預測詳情
+        current_revenue = target_stock.revenue
+        for year in range(assumptions.projection_years):
+            growth_rate = assumptions.revenue_growth_rates[year]
+            projected_revenue = current_revenue * (1 + growth_rate)
+            ebitda_margin = assumptions.ebitda_margins[year]
+            projected_ebitda = projected_revenue * ebitda_margin
+            depreciation = projected_ebitda * 0.10
+            ebit = projected_ebitda - depreciation
+            nopat = ebit * (1 - assumptions.tax_rate)
+            capex = depreciation
+            working_capital_change = projected_revenue * growth_rate * 0.05 if year > 0 else 0
+            fcf = projected_fcf[year]
+            pv_fcf = fcf / ((1 + assumptions.wacc) ** (year + 1))
+            
+            calculation_details["projected_cash_flows"]["projections"].append({
+                "year": year + 1,
+                "revenue": projected_revenue,
+                "revenue_growth": growth_rate,
+                "ebitda": projected_ebitda,
+                "ebitda_margin": ebitda_margin,
+                "depreciation": depreciation,
+                "ebit": ebit,
+                "nopat": nopat,
+                "capex": capex,
+                "working_capital_change": working_capital_change,
+                "free_cash_flow": fcf,
+                "discount_factor": 1 / ((1 + assumptions.wacc) ** (year + 1)),
+                "present_value": pv_fcf
+            })
+            current_revenue = projected_revenue
+
         return ValuationResult(
             method=ValuationMethod.DCF,
             target_price=target_price_per_share,
@@ -83,7 +152,19 @@ class DCFAnalyzer:
                 "enterprise_value": enterprise_value,
                 "equity_value": equity_value
             },
-            detailed_analysis=detailed_analysis
+            detailed_analysis=detailed_analysis,
+            calculation_details=calculation_details,
+            raw_data_sources={
+                "stock_data": {
+                    "revenue": target_stock.revenue,
+                    "market_cap": target_stock.market_cap,
+                    "current_price": target_stock.price,
+                    "total_debt": target_stock.total_debt,
+                    "free_cash_flow": target_stock.free_cash_flow
+                },
+                "data_sources": ["Yahoo Finance", "Alpha Vantage", "FMP"],
+                "calculation_engine": "iBank DCF Analyzer v1.0"
+            }
         )
     
     def _validate_inputs(self, target_stock: StockData, assumptions: DCFAssumptions):

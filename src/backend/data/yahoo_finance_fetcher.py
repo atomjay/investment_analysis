@@ -20,6 +20,7 @@ class YahooFinanceDataFetcher:
     def __init__(self):
         self.name = "Yahoo Finance Data Fetcher"
         self.normalizer = DataNormalizer()
+        self.raw_api_response = None  # 存儲最新的原始API響應
         logger.info("初始化 Yahoo Finance 數據獲取器")
         logger.info("數據標準化器: 已啟用")
     
@@ -54,6 +55,14 @@ class YahooFinanceDataFetcher:
                 current_price = info.get('currentPrice', info.get('regularMarketPrice', 0))
             else:
                 current_price = hist['Close'].iloc[-1] if not hist.empty else 0
+            
+            # 保存原始API響應數據以供驗證
+            self.raw_api_response = {
+                'yahoo_finance_info': info,
+                'yahoo_finance_history': hist.to_dict('records') if not hist.empty else [],
+                'fetch_timestamp': datetime.now().isoformat(),
+                'api_source': 'yfinance library'
+            }
             
             # 準備原始數據進行標準化
             raw_data = {
@@ -269,3 +278,7 @@ class YahooFinanceDataFetcher:
                 "status": "未知",
                 "error": str(e)
             }
+    
+    def get_raw_api_response(self) -> Dict[str, Any]:
+        """獲取最新的原始API響應數據"""
+        return self.raw_api_response or {}

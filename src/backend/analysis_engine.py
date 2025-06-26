@@ -356,7 +356,43 @@ class AnalysisEngine:
                     "potential_return": valuation_results[0].upside_potential,
                     "recommendation": recommendation.recommendation.value,
                     "risk_level": recommendation.risk_level,
-                    "analysis_methods": [r.method.value for r in valuation_results]
+                    "analysis_methods": [r.method.value for r in valuation_results],
+                    "valuation_methods": [
+                        {
+                            'method': result.method.value,
+                            'target_price': result.target_price,
+                            'upside_potential': result.upside_potential,
+                            'confidence_level': result.confidence_level,
+                            'calculation_details': result.calculation_details,
+                            'raw_data_sources': result.raw_data_sources,
+                            'assumptions': result.assumptions,
+                            'detailed_analysis': result.detailed_analysis
+                        } for result in valuation_results
+                    ],
+                    "raw_api_data": {
+                        "stock_data": {
+                            "symbol": stock_data.symbol,
+                            "company_name": stock_data.company_name,
+                            "price": stock_data.price,
+                            "market_cap": stock_data.market_cap,
+                            "revenue": stock_data.revenue,
+                            "net_income": stock_data.net_income,
+                            "pe_ratio": stock_data.pe_ratio,
+                            "sector": stock_data.sector
+                        },
+                        "comparable_companies": [
+                            {
+                                "symbol": comp.symbol,
+                                "company_name": comp.company_name,
+                                "market_cap": comp.market_cap,
+                                "pe_ratio": comp.metrics.pe_ratio,
+                                "ev_ebitda": comp.metrics.ev_ebitda
+                            } for comp in comparable_companies
+                        ],
+                        "data_source": "Yahoo Finance API",
+                        "fetch_timestamp": datetime.now().isoformat(),
+                        "raw_yahoo_finance_response": self.data_fetcher.get_raw_api_response() if hasattr(self.data_fetcher, 'get_raw_api_response') else {}
+                    }
                 }
             else:
                 return {"error": "無法完成估值分析"}

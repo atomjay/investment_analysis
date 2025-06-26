@@ -186,12 +186,34 @@ def analyze_stock():
                         'display_name': get_method_display_name(result.method.value),
                         'target_price': result.target_price,
                         'upside_potential': result.upside_potential,
-                        'confidence_level': result.confidence_level
+                        'confidence_level': result.confidence_level,
+                        'calculation_details': result.calculation_details,
+                        'raw_data_sources': result.raw_data_sources,
+                        'assumptions': result.assumptions,
+                        'detailed_analysis': result.detailed_analysis
                     } for result in report.valuation_results
                 ],
                 'executive_summary': report.executive_summary,
                 'key_risks': report.key_risks,
-                'catalysts': report.catalysts
+                'catalysts': report.catalysts,
+                'raw_api_data': {
+                    'stock_data': {
+                        'symbol': report.stock_data.symbol,
+                        'company_name': report.stock_data.company_name,
+                        'price': report.stock_data.price,
+                        'market_cap': report.stock_data.market_cap,
+                        'revenue': report.stock_data.revenue,
+                        'net_income': report.stock_data.net_income,
+                        'pe_ratio': report.stock_data.pe_ratio,
+                        'sector': report.stock_data.sector,
+                        'total_assets': report.stock_data.total_assets,
+                        'total_debt': report.stock_data.total_debt,
+                        'free_cash_flow': report.stock_data.free_cash_flow
+                    },
+                    'data_source': data_source,
+                    'fetch_timestamp': datetime.now().isoformat(),
+                    'raw_yahoo_finance_response': temp_engine.data_fetcher.get_raw_api_response() if hasattr(temp_engine.data_fetcher, 'get_raw_api_response') else {}
+                }
             }
         else:
             # 快速分析
@@ -211,7 +233,9 @@ def analyze_stock():
                     'display_name': get_recommendation_display_name_from_string(result['recommendation']),
                     'risk_level': result['risk_level']
                 },
-                'analysis_methods': [get_method_display_name(method) for method in result['analysis_methods']]
+                'analysis_methods': [get_method_display_name(method) for method in result['analysis_methods']],
+                'valuation_methods': result.get('valuation_methods', []),
+                'raw_api_data': result.get('raw_api_data', {})
             }
         
         logger.info(f'分析完成 {symbol} - 推薦: {response["recommendation"]["display_name"]}')

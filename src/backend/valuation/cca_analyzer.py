@@ -54,6 +54,61 @@ class CCAAnalyzer:
             target_stock, comparables, peer_multiples, target_prices
         )
         
+        # 準備詳細計算數據
+        calculation_details = {
+            "peer_multiples_analysis": {
+                "peer_count": len(comparables),
+                "pe_statistics": {
+                    "median": peer_multiples.get("pe_median", 0),
+                    "mean": peer_multiples.get("pe_mean", 0),
+                    "75th_percentile": peer_multiples.get("pe_75th", 0),
+                    "25th_percentile": peer_multiples.get("pe_25th", 0)
+                } if "pe_median" in peer_multiples else None,
+                "ev_ebitda_statistics": {
+                    "median": peer_multiples.get("ev_ebitda_median", 0),
+                    "mean": peer_multiples.get("ev_ebitda_mean", 0),
+                    "75th_percentile": peer_multiples.get("ev_ebitda_75th", 0),
+                    "25th_percentile": peer_multiples.get("ev_ebitda_25th", 0)
+                } if "ev_ebitda_median" in peer_multiples else None
+            },
+            "target_company_metrics": {
+                "eps": target_stock.net_income / (target_stock.market_cap / target_stock.price) if target_stock.net_income else None,
+                "estimated_ebitda": target_stock.revenue * 0.2 if target_stock.revenue else None,
+                "book_value_per_share": (target_stock.total_assets - (target_stock.total_debt or 0)) / (target_stock.market_cap / target_stock.price) if target_stock.total_assets else None
+            },
+            "valuation_calculations": {
+                "method_prices": target_prices,
+                "weights": {
+                    "pe_based": 0.5,
+                    "ev_ebitda_based": 0.3,
+                    "pb_based": 0.2
+                },
+                "weighted_calculation": []
+            }
+        }
+        
+        # 填充加權計算詳情
+        total_weight = 0.0
+        weighted_sum = 0.0
+        weights = {"pe_based": 0.5, "ev_ebitda_based": 0.3, "pb_based": 0.2}
+        
+        for method, price in target_prices.items():
+            if method in weights and price > 0:
+                weight = weights[method]
+                contribution = price * weight
+                weighted_sum += contribution
+                total_weight += weight
+                
+                calculation_details["valuation_calculations"]["weighted_calculation"].append({
+                    "method": method,
+                    "target_price": price,
+                    "weight": weight,
+                    "contribution": contribution,
+                    "multiple_used": peer_multiples.get(method.replace("_based", "_median"), "N/A")
+                })
+        
+        calculation_details["valuation_calculations"]["final_weighted_price"] = weighted_sum / total_weight if total_weight > 0 else 0
+
         return ValuationResult(
             method=ValuationMethod.CCA,
             target_price=weighted_target_price,
@@ -66,7 +121,29 @@ class CCAAnalyzer:
                 "median_ev_ebitda": peer_multiples.get("ev_ebitda_median", 0),
                 "sector": target_stock.sector
             },
-            detailed_analysis=detailed_analysis
+            detailed_analysis=detailed_analysis,
+            calculation_details=calculation_details,
+            raw_data_sources={
+                "comparable_companies": [
+                    {
+                        "symbol": comp.symbol,
+                        "company_name": comp.company_name,
+                        "market_cap": comp.market_cap,
+                        "pe_ratio": comp.metrics.pe_ratio,
+                        "ev_ebitda": comp.metrics.ev_ebitda,
+                        "pb_ratio": comp.metrics.pb_ratio
+                    } for comp in comparables
+                ],
+                "target_company_data": {
+                    "symbol": target_stock.symbol,
+                    "market_cap": target_stock.market_cap,
+                    "revenue": target_stock.revenue,
+                    "net_income": target_stock.net_income,
+                    "total_assets": target_stock.total_assets
+                },
+                "data_sources": ["Yahoo Finance", "Alpha Vantage", "FMP"],
+                "calculation_engine": "iBank CCA Analyzer v1.0"
+            }
         )
     
     def _calculate_peer_multiples(self, comparables: List[CompanyComparable]) -> Dict[str, float]:

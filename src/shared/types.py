@@ -104,6 +104,8 @@ class ValuationResult:
     confidence_level: float  # 信心水平 (0-1)
     assumptions: Dict[str, Union[str, float]]
     detailed_analysis: str
+    calculation_details: Optional[Dict[str, Union[str, float, Dict]]] = None  # 詳細計算數據
+    raw_data_sources: Optional[Dict[str, any]] = None  # 原始數據源
 
 @dataclass
 class CompanyComparable:

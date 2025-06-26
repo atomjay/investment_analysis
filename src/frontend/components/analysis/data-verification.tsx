@@ -575,6 +575,61 @@ export function DataVerification({ data, rawApiResponse }: DataVerificationProps
                     </div>
                   </div>
                   
+                  {/* 原始Yahoo Finance API響應數據 */}
+                  {(data as any).raw_api_data?.raw_yahoo_finance_response && (
+                    <div className="bg-gray-800 p-3 rounded border border-gray-600">
+                      <h5 className="text-yellow-400 font-semibold mb-2 text-sm">🔗 Yahoo Finance API 原始響應</h5>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        <div className="border border-gray-600 rounded p-2">
+                          <div className="text-cyan-400 text-xs font-semibold">API 基本信息</div>
+                          <div className="text-gray-300 text-xs mt-1">
+                            <div>API Source: <span className="text-green-400">{(data as any).raw_api_data.raw_yahoo_finance_response.api_source}</span></div>
+                            <div>Fetch Time: <span className="text-blue-400">{(data as any).raw_api_data.raw_yahoo_finance_response.fetch_timestamp}</span></div>
+                          </div>
+                        </div>
+                        
+                        {(data as any).raw_api_data.raw_yahoo_finance_response.yahoo_finance_info && (
+                          <div className="border border-gray-600 rounded p-2">
+                            <div className="text-cyan-400 text-xs font-semibold">Yahoo Finance Info 原始數據 (部分欄位)</div>
+                            <div className="text-gray-300 text-xs mt-1 font-mono max-h-32 overflow-y-auto">
+                              {Object.entries((data as any).raw_api_data.raw_yahoo_finance_response.yahoo_finance_info)
+                                .filter(([key]) => ['currentPrice', 'marketCap', 'totalRevenue', 'netIncomeToCommon', 'trailingPE', 'enterpriseToEbitda', 'totalAssets', 'totalDebt', 'freeCashflow', 'longName', 'sector', 'industry'].includes(key))
+                                .slice(0, 15)
+                                .map(([key, value]) => (
+                                <div key={key} className="text-xs">
+                                  <span className="text-yellow-400">{key}:</span> <span className="text-white">{typeof value === 'number' ? value.toLocaleString() : JSON.stringify(value)}</span>
+                                </div>
+                              ))}
+                              <div className="text-gray-500 text-xs mt-1">
+                                ... 更多欄位請查看完整 JSON ({Object.keys((data as any).raw_api_data.raw_yahoo_finance_response.yahoo_finance_info).length} 個欄位)
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {(data as any).raw_api_data.raw_yahoo_finance_response.yahoo_finance_history && 
+                         (data as any).raw_api_data.raw_yahoo_finance_response.yahoo_finance_history.length > 0 && (
+                          <div className="border border-gray-600 rounded p-2">
+                            <div className="text-cyan-400 text-xs font-semibold">Yahoo Finance 歷史價格數據 (最近3天)</div>
+                            <div className="text-gray-300 text-xs mt-1 font-mono max-h-24 overflow-y-auto">
+                              {(data as any).raw_api_data.raw_yahoo_finance_response.yahoo_finance_history.slice(-3).map((day: any, idx: number) => (
+                                <div key={idx} className="text-xs">
+                                  {day.Date && (
+                                    <span className="text-yellow-400">{new Date(day.Date).toLocaleDateString()}:</span>
+                                  )}
+                                  <span className="text-white"> Open=${day.Open?.toFixed(2)} High=${day.High?.toFixed(2)} Low=${day.Low?.toFixed(2)} Close=${day.Close?.toFixed(2)}</span>
+                                </div>
+                              ))}
+                              <div className="text-gray-500 text-xs mt-1">
+                                總計 {(data as any).raw_api_data.raw_yahoo_finance_response.yahoo_finance_history.length} 天歷史數據
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* 顯示每個估值方法的原始數據 */}
                   {isFullAnalysis && (data as AnalysisResponse).valuation_methods && (
                     <div className="bg-gray-800 p-3 rounded border border-gray-600">
