@@ -10,6 +10,10 @@ import os
 import sys
 from datetime import datetime
 import logging
+from dotenv import load_dotenv
+
+# 載入環境變量
+load_dotenv()
 
 # 添加父目錄到路徑以便導入後端模組
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))

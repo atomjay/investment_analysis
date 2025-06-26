@@ -21,6 +21,10 @@ pydantic==2.4.0
 # Environment Configuration
 python-dotenv==1.0.0
 
+# Real Data Sources
+yfinance==0.2.20
+alpha-vantage==2.3.1
+
 # Logging
 loguru==0.7.2
 

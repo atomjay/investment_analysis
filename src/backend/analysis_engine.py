@@ -5,7 +5,12 @@ Main orchestrator for investment analysis workflow
 
 from typing import List, Dict, Optional, Tuple
 import logging
+import os
 from datetime import datetime
+from dotenv import load_dotenv
+
+# 載入環境變量
+load_dotenv()
 
 from ..shared.types import (
     StockData, ValuationResult, InvestmentRecommendation, 
@@ -15,19 +20,41 @@ from .valuation.cca_analyzer import CCAAnalyzer
 from .valuation.dcf_analyzer import DCFAnalyzer
 from .recommendation.recommendation_engine import RecommendationEngine
 from .data.stock_data_fetcher import StockDataFetcher
+from .data.real_data_fetcher import RealStockDataFetcher
+from .data.yahoo_finance_fetcher import YahooFinanceDataFetcher
 
 class AnalysisEngine:
     """投資分析引擎主控制器"""
     
-    def __init__(self, api_key: Optional[str] = None):
-        self.data_fetcher = StockDataFetcher(api_key)
-        self.cca_analyzer = CCAAnalyzer()
-        self.dcf_analyzer = DCFAnalyzer()
-        self.recommendation_engine = RecommendationEngine()
-        
+    def __init__(self, api_key: Optional[str] = None, use_real_data: bool = True):
         # 設置日誌
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
+        
+        # 智能選擇數據源
+        if use_real_data:
+            alpha_key = api_key or os.getenv('ALPHA_VANTAGE_API_KEY')
+            fmp_key = os.getenv('FMP_API_KEY')
+            
+            if alpha_key or fmp_key:
+                # 優先使用付費API（Alpha Vantage + FMP）
+                self.data_fetcher = RealStockDataFetcher(alpha_key, fmp_key)
+                self.logger.info("✅ 使用真實數據源 (Alpha Vantage + FMP)")
+            else:
+                # 後備方案：使用免費的Yahoo Finance
+                try:
+                    self.data_fetcher = YahooFinanceDataFetcher()
+                    self.logger.info("✅ 使用Yahoo Finance數據源 (免費)")
+                except ImportError:
+                    self.data_fetcher = StockDataFetcher(api_key)
+                    self.logger.warning("⚠️ 使用模擬數據源")
+        else:
+            self.data_fetcher = StockDataFetcher(api_key)
+            self.logger.info("🔧 使用模擬數據源 (開發模式)")
+        
+        self.cca_analyzer = CCAAnalyzer()
+        self.dcf_analyzer = DCFAnalyzer()
+        self.recommendation_engine = RecommendationEngine()
     
     def analyze_stock(self, symbol: str, include_sensitivity: bool = False) -> Optional[AnalysisReport]:
         """
