@@ -252,7 +252,7 @@ export function DataVerification({ data, rawApiResponse }: DataVerificationProps
                                       <span className="inline-block w-6 h-6 bg-blue-200 rounded-full text-center leading-6 text-blue-800 mr-2 flex-shrink-0">1</span>
                                       <div>
                                         <div className="font-medium">蒐集同業公司數據</div>
-                                        <div className="text-blue-600 text-xs mt-1">• 選取同行業3-10家公司</div>
+                                        <div className="text-blue-600 text-xs mt-1">• 同業公司數量: {(method as any).calculation_details?.peer_multiples_analysis?.peer_count || 'N/A'}家</div>
                                         <div className="text-blue-600 text-xs">• 計算各公司P/E, EV/EBITDA, P/B倍數</div>
                                       </div>
                                     </div>
@@ -260,27 +260,62 @@ export function DataVerification({ data, rawApiResponse }: DataVerificationProps
                                       <span className="inline-block w-6 h-6 bg-blue-200 rounded-full text-center leading-6 text-blue-800 mr-2 flex-shrink-0">2</span>
                                       <div>
                                         <div className="font-medium">計算行業倍數統計</div>
-                                        <div className="text-blue-600 text-xs mt-1">• P/E中位數 = {(method as any).assumptions?.median_pe || 'N/A'}</div>
-                                        <div className="text-blue-600 text-xs">• EV/EBITDA中位數 = {(method as any).assumptions?.median_ev_ebitda || 'N/A'}</div>
+                                        {(method as any).calculation_details?.peer_multiples_analysis?.pe_statistics && (
+                                          <div className="bg-white p-2 rounded border mt-1">
+                                            <div className="text-blue-600 text-xs">P/E倍數統計:</div>
+                                            <div className="text-blue-600 text-xs">• 中位數 = {(method as any).calculation_details.peer_multiples_analysis.pe_statistics.median?.toFixed(1)}x</div>
+                                            <div className="text-blue-600 text-xs">• 平均值 = {(method as any).calculation_details.peer_multiples_analysis.pe_statistics.mean?.toFixed(1)}x</div>
+                                            <div className="text-blue-600 text-xs">• 75分位 = {(method as any).calculation_details.peer_multiples_analysis.pe_statistics['75th_percentile']?.toFixed(1)}x</div>
+                                            <div className="text-blue-600 text-xs">• 25分位 = {(method as any).calculation_details.peer_multiples_analysis.pe_statistics['25th_percentile']?.toFixed(1)}x</div>
+                                          </div>
+                                        )}
+                                        {(method as any).calculation_details?.peer_multiples_analysis?.ev_ebitda_statistics && (
+                                          <div className="bg-white p-2 rounded border mt-1">
+                                            <div className="text-blue-600 text-xs">EV/EBITDA倍數統計:</div>
+                                            <div className="text-blue-600 text-xs">• 中位數 = {(method as any).calculation_details.peer_multiples_analysis.ev_ebitda_statistics.median?.toFixed(1)}x</div>
+                                            <div className="text-blue-600 text-xs">• 平均值 = {(method as any).calculation_details.peer_multiples_analysis.ev_ebitda_statistics.mean?.toFixed(1)}x</div>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                     <div className="flex items-start">
                                       <span className="inline-block w-6 h-6 bg-blue-200 rounded-full text-center leading-6 text-blue-800 mr-2 flex-shrink-0">3</span>
                                       <div>
                                         <div className="font-medium">應用倍數計算目標價</div>
-                                        <div className="text-blue-600 text-xs mt-1 font-mono bg-white p-2 rounded border">
-                                          目標價 = EPS × 行業P/E中位數<br/>
-                                          或 目標價 = (EBITDA × EV/EBITDA中位數) ÷ 股數
-                                        </div>
+                                        {(method as any).calculation_details?.target_company_metrics && (
+                                          <div className="bg-white p-2 rounded border mt-1 font-mono text-xs">
+                                            <div>目標公司指標:</div>
+                                            <div>• EPS = ${(method as any).calculation_details.target_company_metrics.eps?.toFixed(2) || 'N/A'}</div>
+                                            <div>• 估計EBITDA = ${((method as any).calculation_details.target_company_metrics.estimated_ebitda / 1e6)?.toFixed(0) || 'N/A'}M</div>
+                                            <div>• 每股淨值 = ${(method as any).calculation_details.target_company_metrics.book_value_per_share?.toFixed(2) || 'N/A'}</div>
+                                          </div>
+                                        )}
+                                        {(method as any).calculation_details?.valuation_calculations?.method_prices && (
+                                          <div className="bg-white p-2 rounded border mt-1 font-mono text-xs">
+                                            <div>各方法計算結果:</div>
+                                            {Object.entries((method as any).calculation_details.valuation_calculations.method_prices).map(([methodName, price]: [string, any]) => (
+                                              <div key={methodName}>• {methodName}: ${price?.toFixed(2)}</div>
+                                            ))}
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                     <div className="flex items-start">
                                       <span className="inline-block w-6 h-6 bg-blue-200 rounded-full text-center leading-6 text-blue-800 mr-2 flex-shrink-0">4</span>
                                       <div>
                                         <div className="font-medium">加權平均計算</div>
-                                        <div className="text-blue-600 text-xs mt-1">• P/E方法權重: 50%</div>
-                                        <div className="text-blue-600 text-xs">• EV/EBITDA方法權重: 30%</div>
-                                        <div className="text-blue-600 text-xs">• P/B方法權重: 20%</div>
+                                        {(method as any).calculation_details?.valuation_calculations?.weighted_calculation && (
+                                          <div className="bg-white p-2 rounded border mt-1 font-mono text-xs">
+                                            {(method as any).calculation_details.valuation_calculations.weighted_calculation.map((calc: any, idx: number) => (
+                                              <div key={idx}>
+                                                • {calc.method}: ${calc.target_price?.toFixed(2)} × {(calc.weight * 100).toFixed(0)}% = ${calc.contribution?.toFixed(2)}
+                                              </div>
+                                            ))}
+                                            <div className="border-t pt-1 mt-1 font-semibold">
+                                              加權平均價格 = ${(method as any).calculation_details.valuation_calculations.final_weighted_price?.toFixed(2)}
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
@@ -295,38 +330,73 @@ export function DataVerification({ data, rawApiResponse }: DataVerificationProps
                                       <span className="inline-block w-6 h-6 bg-green-200 rounded-full text-center leading-6 text-green-800 mr-2 flex-shrink-0">1</span>
                                       <div>
                                         <div className="font-medium">預測未來現金流</div>
-                                        <div className="text-green-600 text-xs mt-1">• 分析歷史現金流趨勢</div>
-                                        <div className="text-green-600 text-xs">• 預測未來5-10年自由現金流</div>
+                                        <div className="text-green-600 text-xs mt-1">• 基準收入: ${((method as any).calculation_details?.projected_cash_flows?.base_revenue / 1e9)?.toFixed(1) || 'N/A'}B</div>
+                                        {(method as any).calculation_details?.projected_cash_flows?.projections && (
+                                          <div className="bg-white p-2 rounded border mt-1 max-h-32 overflow-y-auto">
+                                            <div className="text-green-600 text-xs font-semibold mb-1">年度現金流預測:</div>
+                                            {(method as any).calculation_details.projected_cash_flows.projections.slice(0, 3).map((proj: any, idx: number) => (
+                                              <div key={idx} className="text-green-600 text-xs">
+                                                Year {proj.year}: FCF=${(proj.free_cash_flow / 1e6).toFixed(0)}M (PV=${(proj.present_value / 1e6).toFixed(0)}M)
+                                              </div>
+                                            ))}
+                                            {(method as any).calculation_details.projected_cash_flows.projections.length > 3 && (
+                                              <div className="text-green-500 text-xs">... +{(method as any).calculation_details.projected_cash_flows.projections.length - 3} more years</div>
+                                            )}
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                     <div className="flex items-start">
                                       <span className="inline-block w-6 h-6 bg-green-200 rounded-full text-center leading-6 text-green-800 mr-2 flex-shrink-0">2</span>
                                       <div>
                                         <div className="font-medium">計算折現率 (WACC)</div>
-                                        <div className="text-green-600 text-xs mt-1 font-mono bg-white p-2 rounded border">
-                                          WACC = (E/V × Re) + (D/V × Rd × (1-T))<br/>
-                                          預設WACC = 10%
-                                        </div>
+                                        {(method as any).calculation_details?.wacc_calculation && (
+                                          <div className="bg-white p-2 rounded border mt-1 font-mono text-xs">
+                                            <div>WACC = {((method as any).calculation_details.wacc_calculation.wacc * 100).toFixed(1)}%</div>
+                                            <div className="text-green-600 mt-1">組成部分:</div>
+                                            <div>• 無風險利率 = {((method as any).calculation_details.wacc_calculation.components.risk_free_rate * 100).toFixed(1)}%</div>
+                                            <div>• 市場風險溢價 = {((method as any).calculation_details.wacc_calculation.components.market_risk_premium * 100).toFixed(1)}%</div>
+                                            <div>• Beta = {(method as any).calculation_details.wacc_calculation.components.beta}</div>
+                                            <div>• 債務成本 = {((method as any).calculation_details.wacc_calculation.components.cost_of_debt * 100).toFixed(1)}%</div>
+                                            <div>• 稅率 = {((method as any).calculation_details.wacc_calculation.components.tax_rate * 100).toFixed(1)}%</div>
+                                            <div>• 債務比重 = {((method as any).calculation_details.wacc_calculation.components.debt_to_total_value * 100).toFixed(1)}%</div>
+                                            <div>• 權益比重 = {((method as any).calculation_details.wacc_calculation.components.equity_to_total_value * 100).toFixed(1)}%</div>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                     <div className="flex items-start">
                                       <span className="inline-block w-6 h-6 bg-green-200 rounded-full text-center leading-6 text-green-800 mr-2 flex-shrink-0">3</span>
                                       <div>
                                         <div className="font-medium">計算終值 (Terminal Value)</div>
-                                        <div className="text-green-600 text-xs mt-1 font-mono bg-white p-2 rounded border">
-                                          終值 = FCF年n+1 ÷ (WACC - g)<br/>
-                                          永續增長率 g = 2.5%
-                                        </div>
+                                        {(method as any).calculation_details?.terminal_value_calculation && (
+                                          <div className="bg-white p-2 rounded border mt-1 font-mono text-xs">
+                                            <div>最終年FCF = ${((method as any).calculation_details.terminal_value_calculation.final_year_fcf / 1e6).toFixed(0)}M</div>
+                                            <div>永續增長率 = {((method as any).calculation_details.terminal_value_calculation.terminal_growth_rate * 100).toFixed(1)}%</div>
+                                            <div>終值FCF = ${((method as any).calculation_details.terminal_value_calculation.terminal_fcf / 1e6).toFixed(0)}M</div>
+                                            <div>終值 = ${((method as any).calculation_details.terminal_value_calculation.terminal_value / 1e9).toFixed(1)}B</div>
+                                            <div>終值現值 = ${((method as any).calculation_details.terminal_value_calculation.pv_terminal_value / 1e9).toFixed(1)}B</div>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                     <div className="flex items-start">
                                       <span className="inline-block w-6 h-6 bg-green-200 rounded-full text-center leading-6 text-green-800 mr-2 flex-shrink-0">4</span>
                                       <div>
                                         <div className="font-medium">折現至現值</div>
-                                        <div className="text-green-600 text-xs mt-1 font-mono bg-white p-2 rounded border">
-                                          企業價值 = Σ(FCFt ÷ (1+WACC)^t) + 終值PV<br/>
-                                          每股價值 = (企業價值 - 淨債務) ÷ 股數
-                                        </div>
+                                        {(method as any).calculation_details?.valuation_summary && (
+                                          <div className="bg-white p-2 rounded border mt-1 font-mono text-xs">
+                                            <div>預測期現金流現值 = ${((method as any).calculation_details.valuation_summary.pv_projected_fcf / 1e9).toFixed(1)}B</div>
+                                            <div>終值現值 = ${((method as any).calculation_details.valuation_summary.pv_terminal_value / 1e9).toFixed(1)}B</div>
+                                            <div className="border-t pt-1 mt-1">
+                                              <div>企業價值 = ${((method as any).calculation_details.valuation_summary.enterprise_value / 1e9).toFixed(1)}B</div>
+                                              <div>淨債務 = ${((method as any).calculation_details.valuation_summary.net_debt / 1e6).toFixed(0)}M</div>
+                                              <div>股權價值 = ${((method as any).calculation_details.valuation_summary.equity_value / 1e9).toFixed(1)}B</div>
+                                              <div>流通股數 = {((method as any).calculation_details.valuation_summary.shares_outstanding / 1e6).toFixed(0)}M</div>
+                                              <div className="font-semibold text-green-700">每股價值 = ${(method as any).calculation_details.valuation_summary.value_per_share?.toFixed(2)}</div>
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
@@ -499,11 +569,40 @@ export function DataVerification({ data, rawApiResponse }: DataVerificationProps
                     <h5 className="text-yellow-400 font-semibold mb-2 text-sm">🔢 Key Financial Metrics</h5>
                     <div className="text-xs text-gray-300 space-y-1">
                       <div>Current Price: <span className="text-green-400">${data.current_price}</span></div>
-                      <div>Market Cap: <span className="text-blue-400">{(data as any).market_cap || 'N/A'}</span></div>
+                      <div>Market Cap: <span className="text-blue-400">{(data as any).market_cap ? '$' + ((data as any).market_cap / 1e9).toFixed(1) + 'B' : 'N/A'}</span></div>
                       <div>P/E Ratio: <span className="text-purple-400">{(data as any).pe_ratio || 'N/A'}</span></div>
-                      <div>Revenue: <span className="text-orange-400">{(data as any).revenue || 'N/A'}</span></div>
+                      <div>Revenue: <span className="text-orange-400">{(data as any).revenue ? '$' + ((data as any).revenue / 1e9).toFixed(1) + 'B' : 'N/A'}</span></div>
                     </div>
                   </div>
+                  
+                  {/* 顯示每個估值方法的原始數據 */}
+                  {isFullAnalysis && (data as AnalysisResponse).valuation_methods && (
+                    <div className="bg-gray-800 p-3 rounded border border-gray-600">
+                      <h5 className="text-yellow-400 font-semibold mb-2 text-sm">🧮 Valuation Methods Raw Data</h5>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {(data as AnalysisResponse).valuation_methods.map((method, idx) => (
+                          <div key={idx} className="border border-gray-600 rounded p-2">
+                            <div className="text-cyan-400 text-xs font-semibold">{method.display_name}</div>
+                            <div className="text-gray-300 text-xs mt-1">
+                              <div>Target Price: <span className="text-green-400">${method.target_price.toFixed(2)}</span></div>
+                              <div>Confidence: <span className="text-blue-400">{(method.confidence_level * 100).toFixed(0)}%</span></div>
+                              {(method as any).raw_data_sources && (
+                                <div className="mt-1">
+                                  <div className="text-yellow-400 text-xs">Data Sources:</div>
+                                  {(method as any).raw_data_sources.data_sources?.map((source: string, i: number) => (
+                                    <div key={i} className="text-gray-400 text-xs">• {source}</div>
+                                  ))}
+                                  {(method as any).raw_data_sources.calculation_engine && (
+                                    <div className="text-gray-400 text-xs">• Engine: {(method as any).raw_data_sources.calculation_engine}</div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : null}
               
