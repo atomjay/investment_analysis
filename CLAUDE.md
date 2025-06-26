@@ -69,11 +69,28 @@ This file provides essential guidance to Claude Code (claude.ai/code) when worki
 
 ## 🏗️ PROJECT OVERVIEW
 
-Simple banking project with clean architecture and proper module structure.
+**iBank** - 專業級外商投資銀行分析工具，整合四種權威估值方法，提供智能投資建議。
+
+### 📊 **核心功能已完成**
+- ✅ **四種估值方法**: CCA相對估值法、DCF現金流折現法、PTA交易比率法、資產基礎法
+- ✅ **智能推薦引擎**: 五級推薦系統 (強烈買入/買入/持有/賣出/強烈賣出)
+- ✅ **真實數據源**: Alpha Vantage + FMP + Yahoo Finance 智能切換
+- ✅ **數據標準化**: 統一單位格式，確保分析準確性
+- ✅ **現代化前端**: Next.js 14 + TypeScript + TailwindCSS
+- ✅ **RESTful API**: Flask後端，完整錯誤處理和日誌記錄
+
+### 🔄 **當前工作狀態**
+正在完成React前端剩餘組件和圖表可視化功能。
 
 ### 🎯 **DEVELOPMENT STATUS**
-- **Setup**: ✅ Complete
-- **Core Features**: 🚧 Pending
+- **Project Setup**: ✅ Complete
+- **Backend API**: ✅ Complete
+- **Data Sources**: ✅ Complete  
+- **Data Normalization**: ✅ Complete
+- **Valuation Engines**: ✅ Complete
+- **Frontend Framework**: ✅ Complete
+- **Real Data Integration**: ✅ Complete
+- **Frontend Components**: 🚧 In Progress
 - **Testing**: 🚧 Pending
 - **Documentation**: ✅ Complete
 
@@ -112,6 +129,46 @@ Edit(file_path="existing_feature.py", old_string="...", new_string="...")
 3. **🤔 Decision Tree**: Can extend existing? → DO IT | Must create new? → Document why
 4. **✅ Follow Patterns** - Use established project patterns
 5. **📈 Validate** - Ensure no duplication or technical debt
+
+---
+
+## 🚀 COMMON COMMANDS
+
+```bash
+# 啟動開發環境
+python src/run_backend.py          # 後端 (端口8000)
+cd src/frontend && npm run dev     # 前端 (端口3000)
+
+# 測試命令
+python -m pytest tests/                    # 運行後端測試
+python tests/test_data_normalization.py    # 測試數據標準化
+cd src/frontend && npm test                # 前端測試
+
+# 數據驗證
+python -c "from src.backend.data.real_data_fetcher import RealStockDataFetcher; f = RealStockDataFetcher(); print(f.fetch_stock_data('AAPL'))"
+
+# 構建部署
+cd src/frontend && npm run build    # 構建前端
+pip install -r requirements.txt     # 安裝依賴
+```
+
+## 📋 **REMAINING TASKS (Priority Order)**
+
+### 🔥 **HIGH PRIORITY**
+1. **完成React前端組件** (AnalysisResult, MarketOverview, 圖表組件)
+2. **添加圖表可視化** (估值比較圖、趨勢分析圖)
+3. **優化API性能** (緩存機制、並發處理)
+
+### 🔧 **MEDIUM PRIORITY**  
+4. **創建投資組合功能** (多股票追蹤和管理)
+5. **部署到雲端平台** (AWS/GCP/Azure 配置)
+6. **完善測試覆蓋** (單元測試、集成測試、E2E測試)
+
+### 💡 **LOW PRIORITY**
+7. **用戶認證系統** (登錄、個人化設置)
+8. **實時數據更新** (WebSocket連接)
+9. **集成更多數據源** (Bloomberg, Reuters等)
+10. **添加技術指標** (移動平均線、RSI等)
 
 ---
 
