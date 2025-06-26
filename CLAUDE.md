@@ -64,6 +64,7 @@ This file provides essential guidance to Claude Code (claude.ai/code) when worki
 **Step 4: Session Management**
 - [ ] Is this a long/complex task? → If YES, plan context checkpoints
 - [ ] Have I been working >1 hour? → If YES, consider /compact or session break
+- [ ] After /compact, update CLAUDE.md with important session outcomes
 
 > **⚠️ DO NOT PROCEED until all checkboxes are explicitly verified**
 
@@ -169,6 +170,30 @@ pip install -r requirements.txt     # 安裝依賴
 8. **實時數據更新** (WebSocket連接)
 9. **集成更多數據源** (Bloomberg, Reuters等)
 10. **添加技術指標** (移動平均線、RSI等)
+
+---
+
+## 📝 **SESSION HISTORY & COMPACT RECORDS**
+
+### 🔄 **最近完成的工作 (2025-06-26)**
+- ✅ **MCP Playwright 功能移除**: 成功從專案中移除所有 Playwright 相關依賴
+  - 移除的套件: `@playwright/mcp`, `@playwright/test`, `playwright`
+  - 清理並重新安裝 frontend 依賴
+  - 使用 `uv` 管理 Python 環境，避免影響系統環境
+- ✅ **系統測試驗證**: 確認前後端服務正常運行
+  - 後端: 運行於 port 8000，API 端點正常
+  - 前端: 運行於 port 3002，服務正常
+  - 整合測試: AAPL 股票分析 API 測試成功
+
+### 🎯 **Session Management 最佳實踐**
+- 使用 `/compact` 指令管理長對話上下文
+- 每次 compact 後更新此章節記錄重要成果
+- 保持 CLAUDE.md 作為專案狀態的單一來源
+
+### 🔧 **技術債務預防成果**
+- 成功避免創建重複檔案
+- 使用適當的環境管理工具 (uv vs pip)
+- 遵循專案配置檔案結構 (pyproject.toml vs requirements.txt)
 
 ---
 
