@@ -1032,7 +1032,7 @@ export function DataVerification({ data, rawApiResponse }: DataVerificationProps
                                   </div>
                                   <div className="flex justify-between">
                                     <span className="text-gray-600">計算引擎:</span>
-                                    <span className="font-mono text-blue-600">iBank後端估值系統</span>
+                                    <span className="font-mono text-blue-600">CapitalCore後端估值系統</span>
                                   </div>
                                 </div>
                               </div>
