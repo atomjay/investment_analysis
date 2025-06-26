@@ -29,6 +29,8 @@ This file provides essential guidance to Claude Code (claude.ai/code) when worki
 - **NEVER** copy-paste code blocks → extract into shared utilities/functions
 - **NEVER** hardcode values that should be configurable → use config files/environment variables
 - **NEVER** use naming like enhanced_, improved_, new_, v2_ → extend original files instead
+- **NEVER** use `pip install` or any pip commands → ALWAYS use `uv` for Python environment management
+- **NEVER** pollute system Python environment → use `uv run` or `uv sync` for all Python operations
 
 ### 📝 MANDATORY REQUIREMENTS
 - **COMMIT** after every completed task/phase - no exceptions
@@ -38,6 +40,8 @@ This file provides essential guidance to Claude Code (claude.ai/code) when worki
 - **READ FILES FIRST** before editing - Edit/Write tools will fail if you didn't read the file first
 - **DEBT PREVENTION** - Before creating new files, check for existing similar functionality to extend  
 - **SINGLE SOURCE OF TRUTH** - One authoritative implementation per feature/concept
+- **PYTHON ENVIRONMENT** - Always use `uv sync`, `uv run python`, `uv add` instead of pip commands
+- **UV COMMANDS ONLY** - For Python: `uv sync` (install deps), `uv run` (execute), `uv add` (add packages)
 
 ### 🔍 MANDATORY PRE-TASK COMPLIANCE CHECK
 > **STOP: Before starting any task, Claude Code must explicitly verify ALL points:**
@@ -50,6 +54,7 @@ This file provides essential guidance to Claude Code (claude.ai/code) when worki
 - [ ] Will this take >30 seconds? → If YES, use Task agents not Bash
 - [ ] Is this 3+ steps? → If YES, use TodoWrite breakdown first
 - [ ] Am I about to use grep/find/cat? → If YES, use proper tools instead
+- [ ] Am I about to use pip? → If YES, use uv commands instead
 
 **Step 3: Technical Debt Prevention (MANDATORY SEARCH FIRST)**
 - [ ] **SEARCH FIRST**: Use Grep pattern="<functionality>.*<keyword>" to find existing implementations
@@ -162,7 +167,6 @@ pip install -r requirements.txt     # 安裝依賴
 
 ### 🔧 **MEDIUM PRIORITY**  
 4. **創建投資組合功能** (多股票追蹤和管理)
-5. **部署到雲端平台** (AWS/GCP/Azure 配置)
 6. **完善測試覆蓋** (單元測試、集成測試、E2E測試)
 
 ### 💡 **LOW PRIORITY**
@@ -179,7 +183,7 @@ pip install -r requirements.txt     # 安裝依賴
 - ✅ **MCP Playwright 功能移除**: 成功從專案中移除所有 Playwright 相關依賴
   - 移除的套件: `@playwright/mcp`, `@playwright/test`, `playwright`
   - 清理並重新安裝 frontend 依賴
-  - 使用 `uv` 管理 Python 環境，避免影響系統環境
+  - 使用 `uv` 管理 Python 環境，避免影響系統環境, 不要再使用 pip 的方式，使用 uv
 - ✅ **系統測試驗證**: 確認前後端服務正常運行
   - 後端: 運行於 port 8000，API 端點正常
   - 前端: 運行於 port 3002，服務正常
