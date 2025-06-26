@@ -1,13 +1,15 @@
 """
-Investment Analysis Web Application - 投資分析Web應用
-Flask-based web interface for stock analysis
+Investment Analysis API Server - 投資分析API服務器
+Flask-based REST API for React frontend
 """
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import json
 import os
 import sys
 from datetime import datetime
+import logging
 
 # 添加父目錄到路徑以便導入後端模組
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -15,27 +17,86 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from src.backend.analysis_engine import AnalysisEngine
 from src.shared.types import RecommendationType
 
+# 配置日誌
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  # 在生產環境中應使用環境變量
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+
+# 啟用CORS以支援React前端
+CORS(app, origins=[
+    "http://localhost:3000",  # Next.js dev server
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",  # Alternative port
+])
 
 # 初始化分析引擎
 analysis_engine = AnalysisEngine()
 
+@app.before_request
+def log_request_info():
+    """記錄請求信息"""
+    logger.info(f'{request.method} {request.path} - {request.remote_addr}')
+
+@app.after_request
+def after_request(response):
+    """設置響應頭"""
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
 @app.route('/')
 def index():
-    """主頁"""
-    return render_template('index.html')
+    """API根路徑"""
+    return jsonify({
+        'message': 'iBank Investment Analysis API',
+        'version': '1.0.0',
+        'status': 'operational',
+        'endpoints': {
+            'analyze': '/api/analyze',
+            'batch_analyze': '/api/batch_analyze', 
+            'market_overview': '/api/market_overview',
+            'supported_symbols': '/api/supported_symbols',
+            'health': '/api/health'
+        }
+    })
 
-@app.route('/analysis')
-def analysis_page():
-    """分析頁面"""
-    return render_template('analysis.html')
+@app.route('/api/health')
+def health_check():
+    """API健康檢查"""
+    try:
+        # 簡單測試分析引擎是否正常
+        market_overview = analysis_engine.get_market_overview()
+        return jsonify({
+            'status': 'healthy',
+            'timestamp': datetime.now().isoformat(),
+            'services': {
+                'analysis_engine': 'operational',
+                'data_fetcher': 'operational',
+                'api_server': 'operational'
+            }
+        })
+    except Exception as e:
+        logger.error(f'Health check failed: {e}')
+        return jsonify({
+            'status': 'unhealthy',
+            'timestamp': datetime.now().isoformat(),
+            'error': str(e)
+        }), 500
 
-@app.route('/api/analyze', methods=['POST'])
+@app.route('/api/analyze', methods=['POST', 'OPTIONS'])
 def analyze_stock():
     """股票分析API端點"""
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({'error': '缺少請求數據'}), 400
+            
         symbol = data.get('symbol', '').upper().strip()
         
         if not symbol:
@@ -47,6 +108,7 @@ def analyze_stock():
         
         # 執行分析
         analysis_type = data.get('analysis_type', 'quick')
+        logger.info(f'開始分析 {symbol} - 類型: {analysis_type}')
         
         if analysis_type == 'full':
             # 完整分析
@@ -102,6 +164,7 @@ def analyze_stock():
             # 快速分析
             result = analysis_engine.quick_analysis(symbol)
             if 'error' in result:
+                logger.error(f'快速分析失敗 {symbol}: {result["error"]}')
                 return jsonify({'error': result['error']}), 500
             
             response = {
@@ -118,9 +181,11 @@ def analyze_stock():
                 'analysis_methods': [get_method_display_name(method) for method in result['analysis_methods']]
             }
         
+        logger.info(f'分析完成 {symbol} - 推薦: {response["recommendation"]["display_name"]}')
         return jsonify(response)
         
     except Exception as e:
+        logger.error(f'分析API錯誤: {str(e)}')
         return jsonify({'error': f'分析過程中發生錯誤: {str(e)}'}), 500
 
 @app.route('/api/batch_analyze', methods=['POST'])
@@ -222,21 +287,29 @@ def get_method_display_name(method: str) -> str:
 
 @app.errorhandler(404)
 def not_found(error):
-    return render_template('error.html', error="頁面不存在"), 404
+    return jsonify({'error': 'API端點不存在'}), 404
 
 @app.errorhandler(500)
 def internal_error(error):
-    return render_template('error.html', error="內部服務器錯誤"), 500
+    logger.error(f'Internal server error: {error}')
+    return jsonify({'error': '內部服務器錯誤'}), 500
+
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({'error': '請求格式錯誤'}), 400
 
 if __name__ == '__main__':
-    # 創建templates目錄如果不存在
-    templates_dir = os.path.join(os.path.dirname(__file__), 'templates')
-    static_dir = os.path.join(os.path.dirname(__file__), 'static')
+    # 獲取端口配置
+    port = int(os.environ.get('PORT', 8000))
+    debug = os.environ.get('FLASK_ENV') == 'development'
     
-    if not os.path.exists(templates_dir):
-        os.makedirs(templates_dir)
-    if not os.path.exists(static_dir):
-        os.makedirs(static_dir)
+    logger.info(f'Starting iBank API Server on port {port}')
+    logger.info(f'Debug mode: {debug}')
     
-    # 開發模式運行
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # 啟動API服務器
+    app.run(
+        debug=debug,
+        host='0.0.0.0', 
+        port=port,
+        threaded=True  # 支援多線程以提高性能
+    )
