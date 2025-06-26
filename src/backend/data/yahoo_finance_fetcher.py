@@ -203,19 +203,28 @@ class YahooFinanceDataFetcher:
             return None
     
     def validate_symbol(self, symbol: str) -> bool:
-        """驗證股票代號格式"""
+        """驗證股票代號格式
+        
+        Yahoo Finance 支援所有美股代號，只需要驗證基本格式
+        """
         if not symbol or not isinstance(symbol, str):
             return False
         
         clean_symbol = symbol.upper().strip()
         
+        # 基本長度檢查
         if len(clean_symbol) < 1 or len(clean_symbol) > 10:
             return False
         
+        # 允許字母數字，以及常見的股票代號格式（如 BRK.A, BRK-A）
         return clean_symbol.replace(".", "").replace("-", "").isalnum()
     
     def get_supported_symbols(self) -> List[str]:
-        """獲取支援的股票代號列表"""
+        """獲取支援的股票代號列表
+        
+        注意：Yahoo Finance 支援所有美股股票代號，
+        這裡返回熱門股票作為示例，實際上可以輸入任何有效的美股代號
+        """
         return [
             "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA",
             "JPM", "JNJ", "PFE", "WMT", "PG", "HD", "DIS", "NFLX",

@@ -323,7 +323,11 @@ class StockDataFetcher:
         return True
     
     def get_supported_symbols(self) -> List[str]:
-        """獲取支援的股票代號列表"""
+        """獲取支援的股票代號列表
+        
+        注意：這是模擬數據獲取器，實際上可以輸入任何股票代號，
+        這裡返回示例股票供測試使用
+        """
         return ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "JPM", "JNJ", "PFE"]
     
     def get_market_status(self) -> Dict[str, str]:

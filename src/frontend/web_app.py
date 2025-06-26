@@ -19,6 +19,8 @@ load_dotenv()
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from src.backend.analysis_engine import AnalysisEngine
+from src.backend.data.real_data_fetcher import RealStockDataFetcher
+from src.backend.data.yahoo_finance_fetcher import YahooFinanceDataFetcher
 from src.shared.types import RecommendationType
 
 # 配置日誌
@@ -37,6 +39,29 @@ CORS(app, origins=[
 
 # 初始化分析引擎
 analysis_engine = AnalysisEngine()
+
+def create_analysis_engine_with_source(data_source: str):
+    """根據指定數據源創建分析引擎"""
+    try:
+        if data_source == 'yahoo_finance':
+            engine = AnalysisEngine(use_real_data=False)  # 使用預設
+            engine.data_fetcher = YahooFinanceDataFetcher()
+            return engine
+        elif data_source == 'alpha_vantage':
+            alpha_key = os.getenv('ALPHA_VANTAGE_API_KEY')
+            engine = AnalysisEngine(use_real_data=False)
+            engine.data_fetcher = RealStockDataFetcher(alpha_key, None)
+            return engine
+        elif data_source == 'fmp':
+            fmp_key = os.getenv('FMP_API_KEY')
+            engine = AnalysisEngine(use_real_data=False)
+            engine.data_fetcher = RealStockDataFetcher(None, fmp_key)
+            return engine
+        else:
+            return analysis_engine
+    except Exception as e:
+        logger.error(f'創建數據源引擎失敗: {e}')
+        return analysis_engine
 
 @app.before_request
 def log_request_info():
@@ -112,11 +137,15 @@ def analyze_stock():
         
         # 執行分析
         analysis_type = data.get('analysis_type', 'quick')
-        logger.info(f'開始分析 {symbol} - 類型: {analysis_type}')
+        data_source = data.get('data_source', 'yahoo_finance')
+        logger.info(f'開始分析 {symbol} - 類型: {analysis_type} - 數據源: {data_source}')
+        
+        # 根據指定的數據源創建分析引擎
+        temp_engine = create_analysis_engine_with_source(data_source)
         
         if analysis_type == 'full':
             # 完整分析
-            report = analysis_engine.analyze_stock(symbol, include_sensitivity=True)
+            report = temp_engine.analyze_stock(symbol, include_sensitivity=True)
             if not report:
                 return jsonify({'error': f'無法分析股票 {symbol}'}), 500
             
@@ -166,7 +195,7 @@ def analyze_stock():
             }
         else:
             # 快速分析
-            result = analysis_engine.quick_analysis(symbol)
+            result = temp_engine.quick_analysis(symbol)
             if 'error' in result:
                 logger.error(f'快速分析失敗 {symbol}: {result["error"]}')
                 return jsonify({'error': result['error']}), 500
@@ -252,10 +281,79 @@ def market_overview():
 def supported_symbols():
     """獲取支援的股票代號"""
     try:
-        symbols = analysis_engine.data_fetcher.get_supported_symbols()
-        return jsonify({'symbols': symbols})
+        popular_symbols = analysis_engine.data_fetcher.get_supported_symbols()
+        return jsonify({
+            'symbols': popular_symbols,
+            'note': '支援所有美股股票代號，可以輸入任何有效的美股代號進行分析',
+            'popular_only': '以上為熱門股票示例，非全部支援清單'
+        })
     except Exception as e:
         return jsonify({'error': f'獲取支援股票列表失敗: {str(e)}'}), 500
+
+@app.route('/api/data_sources')
+def data_sources():
+    """獲取可用的數據源狀態"""
+    try:
+        from src.backend.data.real_data_fetcher import RealStockDataFetcher
+        from src.backend.data.yahoo_finance_fetcher import YahooFinanceDataFetcher
+        import os
+        
+        sources = {}
+        
+        # Yahoo Finance - 永遠可用
+        sources['yahoo_finance'] = {
+            'name': 'Yahoo Finance',
+            'available': True,
+            'free': True,
+            'rate_limit': None,
+            'features': ['基本估值', 'CCA分析', '快速分析'],
+            'description': '免費且穩定的數據源'
+        }
+        
+        # Alpha Vantage - 檢查API key和限制
+        alpha_key = os.getenv('ALPHA_VANTAGE_API_KEY')
+        if alpha_key:
+            # 簡單測試API是否可用
+            try:
+                fetcher = RealStockDataFetcher(alpha_key, None)
+                test_data = fetcher._fetch_from_alpha_vantage('AAPL')
+                alpha_available = test_data and 'Information' not in test_data
+            except:
+                alpha_available = False
+                
+            sources['alpha_vantage'] = {
+                'name': 'Alpha Vantage',
+                'available': alpha_available,
+                'free': False,
+                'rate_limit': '25 requests/day' if not alpha_available else None,
+                'features': ['完整財務數據', '所有估值方法', '完整分析'],
+                'description': '專業財務數據源'
+            }
+        
+        # FMP - 檢查API key
+        fmp_key = os.getenv('FMP_API_KEY')
+        if fmp_key:
+            try:
+                fetcher = RealStockDataFetcher(None, fmp_key)
+                test_data = fetcher._fetch_from_fmp('AAPL')
+                fmp_available = test_data is not None
+            except:
+                fmp_available = False
+                
+            sources['fmp'] = {
+                'name': 'Financial Modeling Prep',
+                'available': fmp_available,
+                'free': False,
+                'rate_limit': None,
+                'features': ['專業財務指標', '所有估值方法', '完整分析'],
+                'description': '專業投資分析數據'
+            }
+        
+        return jsonify({'sources': sources})
+        
+    except Exception as e:
+        logger.error(f'獲取數據源狀態失敗: {e}')
+        return jsonify({'error': f'獲取數據源狀態失敗: {str(e)}'}), 500
 
 def get_recommendation_display_name(rec_type: RecommendationType) -> str:
     """獲取推薦類型的顯示名稱"""

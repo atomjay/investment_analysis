@@ -31,21 +31,21 @@ class AnalysisEngine:
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
         
-        # 智能選擇數據源
+        # 智能選擇數據源 - 優先使用免費穩定的Yahoo Finance
         if use_real_data:
-            alpha_key = api_key or os.getenv('ALPHA_VANTAGE_API_KEY')
-            fmp_key = os.getenv('FMP_API_KEY')
-            
-            if alpha_key or fmp_key:
-                # 優先使用付費API（Alpha Vantage + FMP）
-                self.data_fetcher = RealStockDataFetcher(alpha_key, fmp_key)
-                self.logger.info("✅ 使用真實數據源 (Alpha Vantage + FMP)")
-            else:
-                # 後備方案：使用免費的Yahoo Finance
-                try:
-                    self.data_fetcher = YahooFinanceDataFetcher()
-                    self.logger.info("✅ 使用Yahoo Finance數據源 (免費)")
-                except ImportError:
+            try:
+                # 優先使用免費且穩定的Yahoo Finance
+                self.data_fetcher = YahooFinanceDataFetcher()
+                self.logger.info("✅ 使用Yahoo Finance數據源 (免費且穩定)")
+            except ImportError:
+                # 後備方案：使用付費API
+                alpha_key = api_key or os.getenv('ALPHA_VANTAGE_API_KEY')
+                fmp_key = os.getenv('FMP_API_KEY')
+                
+                if alpha_key or fmp_key:
+                    self.data_fetcher = RealStockDataFetcher(alpha_key, fmp_key)
+                    self.logger.info("✅ 使用真實數據源 (Alpha Vantage + FMP)")
+                else:
                     self.data_fetcher = StockDataFetcher(api_key)
                     self.logger.warning("⚠️ 使用模擬數據源")
         else:

@@ -2,8 +2,8 @@
 
 import { motion } from 'framer-motion'
 import { 
-  TrendingUpIcon, 
-  TrendingDownIcon,
+  ArrowTrendingUpIcon, 
+  ArrowTrendingDownIcon,
   ChartBarIcon,
   CurrencyDollarIcon,
   ExclamationTriangleIcon,
@@ -29,7 +29,7 @@ export function AnalysisResult({ data, type }: AnalysisResultProps) {
   const getMethodIcon = (method: ValuationMethod) => {
     switch (method) {
       case 'comparable_companies_analysis': return ChartBarIcon
-      case 'discounted_cash_flow': return TrendingUpIcon
+      case 'discounted_cash_flow': return ArrowTrendingUpIcon
       case 'precedent_transactions_analysis': return CurrencyDollarIcon
       case 'asset_based_valuation': return SparklesIcon
       default: return InformationCircleIcon
@@ -90,9 +90,9 @@ export function AnalysisResult({ data, type }: AnalysisResultProps) {
               isPositive ? 'text-green-600' : 'text-red-600'
             }`}>
               {isPositive ? (
-                <TrendingUpIcon className="w-8 h-8 mr-2" />
+                <ArrowTrendingUpIcon className="w-8 h-8 mr-2" />
               ) : (
-                <TrendingDownIcon className="w-8 h-8 mr-2" />
+                <ArrowTrendingDownIcon className="w-8 h-8 mr-2" />
               )}
               {formatPercent(data.potential_return)}
             </div>
@@ -176,7 +176,7 @@ export function AnalysisResult({ data, type }: AnalysisResultProps) {
             {/* Buy Reasons */}
             <div>
               <h3 className="text-lg font-semibold text-green-700 mb-4 flex items-center">
-                <TrendingUpIcon className="w-5 h-5 mr-2" />
+                <ArrowTrendingUpIcon className="w-5 h-5 mr-2" />
                 買入理由
               </h3>
               <div className="space-y-3">

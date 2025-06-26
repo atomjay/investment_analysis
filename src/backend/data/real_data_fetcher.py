@@ -486,8 +486,11 @@ class RealStockDataFetcher:
         return clean_symbol.replace(".", "").isalnum()
     
     def get_supported_symbols(self) -> List[str]:
-        """獲取支援的股票代號列表"""
-        # 可以通過 API 動態獲取，這裡先返回常見股票
+        """獲取支援的股票代號列表
+        
+        注意：Alpha Vantage 和 FMP 支援所有美股股票代號，
+        這裡返回熱門股票作為示例，實際上可以輸入任何有效的美股代號
+        """
         return [
             "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA",
             "JPM", "JNJ", "PFE", "WMT", "PG", "HD", "DIS", "NFLX",

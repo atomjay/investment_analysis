@@ -122,6 +122,7 @@ class DataNormalizer:
             'fmp': {
                 # 基本財務數據
                 'marketCap': ('market_cap', 'USD', 1),
+                'mktCap': ('market_cap', 'USD', 1),
                 'price': ('price', 'USD', 1),
                 'revenue': ('revenue', 'USD', 1),
                 'netIncome': ('net_income', 'USD', 1),

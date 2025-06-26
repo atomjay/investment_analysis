@@ -7,7 +7,7 @@ import {
   XCircleIcon,
   ChartBarIcon,
   CurrencyDollarIcon,
-  TrendingUpIcon,
+  ArrowTrendingUpIcon,
   SparklesIcon,
   InformationCircleIcon
 } from '@heroicons/react/24/outline'
@@ -33,7 +33,7 @@ export function MarketOverview({ data }: MarketOverviewProps) {
 
   const analysisMethodIcons = {
     '相對估值法 (CCA)': ChartBarIcon,
-    '現金流折現法 (DCF)': TrendingUpIcon,
+    '現金流折現法 (DCF)': ArrowTrendingUpIcon,
     '交易比率法 (PTA)': CurrencyDollarIcon,
     '資產基礎法': SparklesIcon
   }
@@ -179,7 +179,7 @@ export function MarketOverview({ data }: MarketOverviewProps) {
       >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-gray-900">平台性能</h3>
-          <TrendingUpIcon className="w-5 h-5 text-gray-400" />
+          <ArrowTrendingUpIcon className="w-5 h-5 text-gray-400" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

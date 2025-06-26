@@ -106,7 +106,7 @@ export interface ApiError {
 
 // UI Component Props Types
 export interface StockSearchProps {
-  onAnalyze: (symbol: string, type: 'quick' | 'full') => void
+  onAnalyze: (symbol: string, type: 'quick' | 'full', dataSource: string) => void
   loading: boolean
 }
 
@@ -140,6 +140,20 @@ export interface ApiClientConfig {
 export interface AnalysisRequest {
   symbol: string
   analysis_type: 'quick' | 'full'
+  data_source: 'yahoo_finance' | 'alpha_vantage' | 'fmp'
+}
+
+export interface DataSource {
+  name: string
+  available: boolean
+  free: boolean
+  rate_limit?: string | null
+  features: string[]
+  description: string
+}
+
+export interface DataSourcesResponse {
+  sources: Record<string, DataSource>
 }
 
 export interface BatchAnalysisRequest {
