@@ -10,6 +10,7 @@ import logging
 from datetime import datetime, timedelta
 
 from ...shared.types import StockData, CompanyComparable, ValuationMetrics
+from .data_normalizer import DataNormalizer
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,9 @@ class YahooFinanceDataFetcher:
     
     def __init__(self):
         self.name = "Yahoo Finance Data Fetcher"
+        self.normalizer = DataNormalizer()
         logger.info("初始化 Yahoo Finance 數據獲取器")
+        logger.info("數據標準化器: 已啟用")
     
     def fetch_stock_data(self, symbol: str) -> Optional[StockData]:
         """
@@ -52,20 +55,45 @@ class YahooFinanceDataFetcher:
             else:
                 current_price = hist['Close'].iloc[-1] if not hist.empty else 0
             
-            # 轉換為 StockData 格式
+            # 準備原始數據進行標準化
+            raw_data = {
+                'currentPrice': current_price,
+                'marketCap': info.get('marketCap'),
+                'totalRevenue': info.get('totalRevenue'),
+                'netIncomeToCommon': info.get('netIncomeToCommon'),
+                'totalAssets': info.get('totalAssets'),
+                'totalDebt': info.get('totalDebt'),
+                'freeCashflow': info.get('freeCashflow'),
+                'trailingPE': info.get('trailingPE'),
+                'enterpriseToEbitda': info.get('enterpriseToEbitda'),
+                'priceToBook': info.get('priceToBook'),
+                'priceToSalesTrailing12Months': info.get('priceToSalesTrailing12Months')
+            }
+            
+            # 使用數據標準化器
+            normalized_data = self.normalizer.normalize_data(raw_data, 'yahoo_finance')
+            
+            # 驗證數據質量
+            validation_results = self.normalizer.validate_critical_fields(normalized_data)
+            completeness_score = self.normalizer.get_data_completeness_score(normalized_data)
+            
+            logger.info(f"Yahoo Finance {symbol} 數據完整性: {completeness_score:.2f}")
+            logger.info(f"關鍵字段驗證: {validation_results}")
+            
+            # 創建 StockData 對象
             stock_data = StockData(
                 symbol=symbol.upper(),
                 company_name=info.get('longName', info.get('shortName', f"{symbol} Company")),
                 sector=info.get('sector', 'Unknown'),
-                market_cap=info.get('marketCap', 0),
-                price=float(current_price),
-                pe_ratio=self._safe_float(info.get('trailingPE')),
-                ev_ebitda=self._safe_float(info.get('enterpriseToEbitda')),
-                revenue=self._safe_float(info.get('totalRevenue')),
-                net_income=self._safe_float(info.get('netIncomeToCommon')),
-                total_assets=self._safe_float(info.get('totalAssets')),
-                total_debt=self._safe_float(info.get('totalDebt')),
-                free_cash_flow=self._safe_float(info.get('freeCashflow'))
+                market_cap=normalized_data.get('market_cap'),
+                price=normalized_data.get('price'),
+                pe_ratio=normalized_data.get('pe_ratio'),
+                ev_ebitda=normalized_data.get('ev_ebitda'),
+                revenue=normalized_data.get('revenue'),
+                net_income=normalized_data.get('net_income'),
+                total_assets=normalized_data.get('total_assets'),
+                total_debt=normalized_data.get('total_debt'),
+                free_cash_flow=normalized_data.get('free_cash_flow')
             )
             
             logger.info(f"成功獲取 {stock_data.company_name} 數據")

@@ -17,6 +17,7 @@ from ...shared.constants import (
     API_TIMEOUT, MAX_RETRIES, RATE_LIMIT_DELAY, 
     ERROR_CODES, SUPPORTED_CURRENCIES
 )
+from .data_normalizer import DataNormalizer
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +36,13 @@ class RealStockDataFetcher:
         self.alpha_vantage_base = "https://www.alphavantage.co/query"
         self.fmp_base = "https://financialmodelingprep.com/api/v3"
         
+        # 初始化數據標準化器
+        self.normalizer = DataNormalizer()
+        
         logger.info(f"初始化真實數據獲取器")
         logger.info(f"Alpha Vantage Key: {'已配置' if self.alpha_vantage_key else '未配置'}")
         logger.info(f"FMP Key: {'已配置' if self.fmp_key else '未配置'}")
+        logger.info(f"數據標準化器: 已啟用")
     
     def fetch_stock_data(self, symbol: str) -> Optional[StockData]:
         """
@@ -239,38 +244,62 @@ class RealStockDataFetcher:
     
     def _merge_stock_data(self, symbol: str, alpha_data: Optional[Dict], 
                          fmp_data: Optional[Dict]) -> Optional[StockData]:
-        """合併不同數據源的股票數據"""
+        """合併不同數據源的股票數據 - 使用數據標準化器"""
         try:
             if not alpha_data and not fmp_data:
                 return None
             
-            # 使用 Alpha Vantage 作為主要數據源，FMP 作為補充
-            merged_data = {}
+            # 標準化各數據源
+            normalized_sources = []
             
             if alpha_data:
-                merged_data.update(alpha_data)
+                normalized_alpha = self.normalizer.normalize_data(alpha_data, 'alpha_vantage')
+                if normalized_alpha:
+                    normalized_sources.append(normalized_alpha)
+                    logger.info(f"Alpha Vantage 數據標準化完成: {len(normalized_alpha)} 字段")
             
             if fmp_data:
-                # FMP 數據覆蓋或補充 Alpha Vantage 數據
-                for key, value in fmp_data.items():
-                    if value is not None and value != "":
-                        merged_data[key] = value
+                normalized_fmp = self.normalizer.normalize_data(fmp_data, 'fmp')
+                if normalized_fmp:
+                    normalized_sources.append(normalized_fmp)
+                    logger.info(f"FMP 數據標準化完成: {len(normalized_fmp)} 字段")
             
-            # 映射到 StockData 格式
+            if not normalized_sources:
+                logger.warning("沒有成功標準化的數據源")
+                return None
+            
+            # 合併標準化數據
+            merged_data = self.normalizer.merge_normalized_data(*normalized_sources)
+            
+            # 驗證關鍵字段
+            validation_results = self.normalizer.validate_critical_fields(merged_data)
+            completeness_score = self.normalizer.get_data_completeness_score(merged_data)
+            
+            logger.info(f"數據完整性評分: {completeness_score:.2f}")
+            logger.info(f"關鍵字段驗證: {validation_results}")
+            
+            # 如果數據質量太低，記錄警告
+            if completeness_score < 0.5:
+                logger.warning(f"{symbol} 數據完整性較低 ({completeness_score:.2f})")
+            
+            # 創建 StockData 對象（現在使用標準化數據）
             stock_data = StockData(
                 symbol=symbol.upper(),
-                company_name=self._get_company_name(merged_data),
-                sector=self._get_sector(merged_data),
-                market_cap=self._get_market_cap(merged_data),
-                price=self._get_current_price(merged_data),
-                pe_ratio=self._get_pe_ratio(merged_data),
-                ev_ebitda=self._get_ev_ebitda(merged_data),
-                revenue=self._get_revenue(merged_data),
-                net_income=self._get_net_income(merged_data),
-                total_assets=self._get_total_assets(merged_data),
-                total_debt=self._get_total_debt(merged_data),
-                free_cash_flow=self._get_free_cash_flow(merged_data)
+                company_name=self._get_company_name_from_raw(alpha_data, fmp_data),
+                sector=self._get_sector_from_raw(alpha_data, fmp_data),
+                market_cap=merged_data.get('market_cap'),
+                price=merged_data.get('price'),
+                pe_ratio=merged_data.get('pe_ratio'),
+                ev_ebitda=merged_data.get('ev_ebitda'),
+                revenue=merged_data.get('revenue'),
+                net_income=merged_data.get('net_income'),
+                total_assets=merged_data.get('total_assets'),
+                total_debt=merged_data.get('total_debt'),
+                free_cash_flow=merged_data.get('free_cash_flow')
             )
+            
+            # 記錄數據來源信息
+            logger.info(f"最終數據來源: {merged_data.get('_merged_sources', [])}")
             
             return stock_data
             
@@ -278,118 +307,41 @@ class RealStockDataFetcher:
             logger.error(f"合併數據時發生錯誤: {e}")
             return None
     
-    def _get_company_name(self, data: Dict) -> str:
-        """提取公司名稱"""
-        return (data.get("Name") or 
-                data.get("companyName") or 
-                data.get("shortName") or 
-                "Unknown Company")
-    
-    def _get_sector(self, data: Dict) -> str:
-        """提取行業分類"""
-        return (data.get("Sector") or 
-                data.get("sector") or 
-                data.get("industry") or 
-                "Unknown")
-    
-    def _get_market_cap(self, data: Dict) -> float:
-        """提取市值"""
-        market_cap = (data.get("MarketCapitalization") or 
-                     data.get("marketCap") or 
-                     data.get("mktCap") or 0)
+    def _get_company_name_from_raw(self, alpha_data: Optional[Dict], fmp_data: Optional[Dict]) -> str:
+        """從原始數據中提取公司名稱"""
+        # 嘗試從 Alpha Vantage 獲取
+        if alpha_data:
+            name = alpha_data.get("Name")
+            if name:
+                return name
         
-        try:
-            return float(market_cap) if market_cap else 0
-        except (ValueError, TypeError):
-            return 0
-    
-    def _get_current_price(self, data: Dict) -> float:
-        """提取當前股價"""
-        price = (data.get("CurrentPrice") or 
-                data.get("price") or 
-                data.get("Price") or 
-                data.get("52WeekHigh") or 0)
+        # 嘗試從 FMP 獲取
+        if fmp_data:
+            name = (fmp_data.get("companyName") or 
+                   fmp_data.get("shortName"))
+            if name:
+                return name
         
-        try:
-            return float(price) if price else 0
-        except (ValueError, TypeError):
-            return 0
+        return "Unknown Company"
     
-    def _get_pe_ratio(self, data: Dict) -> Optional[float]:
-        """提取市盈率"""
-        pe = (data.get("PERatio") or 
-              data.get("peRatio") or 
-              data.get("peRatioTTM"))
+    def _get_sector_from_raw(self, alpha_data: Optional[Dict], fmp_data: Optional[Dict]) -> str:
+        """從原始數據中提取行業分類"""
+        # 嘗試從 Alpha Vantage 獲取
+        if alpha_data:
+            sector = alpha_data.get("Sector")
+            if sector:
+                return sector
         
-        try:
-            return float(pe) if pe and pe != "None" else None
-        except (ValueError, TypeError):
-            return None
+        # 嘗試從 FMP 獲取
+        if fmp_data:
+            sector = (fmp_data.get("sector") or 
+                     fmp_data.get("industry"))
+            if sector:
+                return sector
+        
+        return "Unknown"
     
-    def _get_ev_ebitda(self, data: Dict) -> Optional[float]:
-        """提取 EV/EBITDA"""
-        ev_ebitda = (data.get("EVToEBITDA") or 
-                    data.get("enterpriseValueOverEBITDA") or 
-                    data.get("evToEbitda"))
-        
-        try:
-            return float(ev_ebitda) if ev_ebitda and ev_ebitda != "None" else None
-        except (ValueError, TypeError):
-            return None
-    
-    def _get_revenue(self, data: Dict) -> Optional[float]:
-        """提取營收"""
-        revenue = (data.get("RevenueTTM") or 
-                  data.get("revenue") or 
-                  data.get("totalRevenue"))
-        
-        try:
-            return float(revenue) if revenue else None
-        except (ValueError, TypeError):
-            return None
-    
-    def _get_net_income(self, data: Dict) -> Optional[float]:
-        """提取淨利潤"""
-        net_income = (data.get("NetIncomeTTM") or 
-                     data.get("netIncome") or 
-                     data.get("netIncomeFromContinuingOps"))
-        
-        try:
-            return float(net_income) if net_income else None
-        except (ValueError, TypeError):
-            return None
-    
-    def _get_total_assets(self, data: Dict) -> Optional[float]:
-        """提取總資產"""
-        total_assets = (data.get("TotalAssets") or 
-                       data.get("totalAssets"))
-        
-        try:
-            return float(total_assets) if total_assets else None
-        except (ValueError, TypeError):
-            return None
-    
-    def _get_total_debt(self, data: Dict) -> Optional[float]:
-        """提取總債務"""
-        total_debt = (data.get("TotalDebt") or 
-                     data.get("totalDebt") or 
-                     data.get("netDebt"))
-        
-        try:
-            return float(total_debt) if total_debt else None
-        except (ValueError, TypeError):
-            return None
-    
-    def _get_free_cash_flow(self, data: Dict) -> Optional[float]:
-        """提取自由現金流"""
-        fcf = (data.get("OperatingCashflowTTM") or 
-               data.get("freeCashFlow") or 
-               data.get("operatingCashFlow"))
-        
-        try:
-            return float(fcf) if fcf else None
-        except (ValueError, TypeError):
-            return None
+    # 舊的數據提取方法已被數據標準化器取代
     
     def fetch_comparable_companies(self, target_symbol: str, sector: str, 
                                  max_companies: int = 10) -> List[CompanyComparable]:
