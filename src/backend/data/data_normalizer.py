@@ -184,6 +184,7 @@ class DataNormalizer:
                 'netIncomeToCommon': ('net_income', 'USD', 1),
                 'totalAssets': ('total_assets', 'USD', 1),
                 'totalDebt': ('total_debt', 'USD', 1),
+                'totalCash': ('total_cash', 'USD', 1),
                 'freeCashflow': ('free_cash_flow', 'USD', 1),
                 'trailingPE': ('pe_ratio', 'ratio', 1),
                 'enterpriseToEbitda': ('ev_ebitda', 'ratio', 1),

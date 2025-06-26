@@ -37,6 +37,7 @@ class StockData:
     net_income: Optional[float] = None
     total_assets: Optional[float] = None
     total_debt: Optional[float] = None
+    total_cash: Optional[float] = None
     free_cash_flow: Optional[float] = None
     operating_cash_flow: Optional[float] = None
     total_equity: Optional[float] = None

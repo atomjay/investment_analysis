@@ -76,6 +76,7 @@ class YahooFinanceDataFetcher:
                 'netIncomeToCommon': info.get('netIncomeToCommon'),
                 'totalAssets': info.get('totalAssets'),
                 'totalDebt': info.get('totalDebt'),
+                'totalCash': info.get('totalCash'),
                 'freeCashflow': info.get('freeCashflow'),
                 'trailingPE': info.get('trailingPE'),
                 'enterpriseToEbitda': info.get('enterpriseToEbitda'),
@@ -106,6 +107,7 @@ class YahooFinanceDataFetcher:
                 net_income=normalized_data.get('net_income'),
                 total_assets=normalized_data.get('total_assets'),
                 total_debt=normalized_data.get('total_debt'),
+                total_cash=normalized_data.get('total_cash'),
                 free_cash_flow=normalized_data.get('free_cash_flow'),
                 raw_api_data=current_raw_response  # 附加原始API數據
             )

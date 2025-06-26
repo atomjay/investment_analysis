@@ -118,7 +118,9 @@ class CCAAnalyzer:
                     estimated_ebitda = target_stock.revenue * 0.2
                     ev_multiple = peer_multiples.get("ev_ebitda_median", 0)
                     implied_ev = estimated_ebitda * ev_multiple
-                    net_debt = (target_stock.total_debt or 0) - 0
+                    total_debt = target_stock.total_debt or 0
+                    total_cash = target_stock.total_cash or 0
+                    net_debt = total_debt - total_cash
                     implied_equity = implied_ev - net_debt
                     shares_outstanding = target_stock.market_cap / target_stock.price
                     
@@ -126,6 +128,8 @@ class CCAAnalyzer:
                         "estimated_ebitda": estimated_ebitda,
                         "ev_ebitda_multiple": ev_multiple,
                         "implied_enterprise_value": implied_ev,
+                        "total_debt": total_debt,
+                        "total_cash": total_cash,
                         "net_debt": net_debt,
                         "implied_equity_value": implied_equity,
                         "shares_outstanding": shares_outstanding,
@@ -241,7 +245,10 @@ class CCAAnalyzer:
             implied_enterprise_value = estimated_ebitda * peer_multiples["ev_ebitda_median"]
             
             # 步驟3: 轉換為股權價值 (Equity Value = EV - Net Debt)
-            net_debt = (target_stock.total_debt or 0) - 0  # 假設無現金，簡化計算
+            # Net Debt = Total Debt - Total Cash (正確的企業估值公式)
+            total_debt = target_stock.total_debt or 0
+            total_cash = target_stock.total_cash or 0
+            net_debt = total_debt - total_cash
             implied_equity_value = implied_enterprise_value - net_debt
             
             # 步驟4: 計算每股價格 (Price per Share = Equity Value / Shares Outstanding)

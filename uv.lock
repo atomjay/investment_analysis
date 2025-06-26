@@ -177,6 +177,53 @@ wheels = [
 ]
 
 [[package]]
+name = "capitalcore"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "alpha-vantage" },
+    { name = "flask" },
+    { name = "flask-cors" },
+    { name = "loguru" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.3.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "pandas" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "requests" },
+    { name = "yfinance" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
+]
+production = [
+    { name = "gunicorn" },
+    { name = "waitress" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "alpha-vantage", specifier = ">=2.3.1" },
+    { name = "flask", specifier = ">=3.0.0" },
+    { name = "flask-cors", specifier = ">=4.0.0" },
+    { name = "gunicorn", marker = "extra == 'production'", specifier = ">=21.2.0" },
+    { name = "loguru", specifier = ">=0.7.2" },
+    { name = "numpy", specifier = ">=1.25.2" },
+    { name = "pandas", specifier = ">=2.1.0" },
+    { name = "pydantic", specifier = ">=2.4.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.4.0" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.1.0" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
+    { name = "requests", specifier = ">=2.31.0" },
+    { name = "waitress", marker = "extra == 'production'", specifier = ">=2.1.2" },
+    { name = "yfinance", specifier = ">=0.2.20" },
+]
+provides-extras = ["dev", "production"]
+
+[[package]]
 name = "certifi"
 version = "2025.6.15"
 source = { registry = "https://pypi.org/simple" }
@@ -579,53 +626,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/34/72/9614c465dc206155d
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cb/7d/6dac2a6e1eba33ee43f318edbed4ff29151a49b5d37f080aad1e6469bca4/gunicorn-23.0.0-py3-none-any.whl", hash = "sha256:ec400d38950de4dfd418cff8328b2c8faed0edb0d517d3394e457c317908ca4d", size = 85029, upload-time = "2024-08-10T20:25:24.996Z" },
 ]
-
-[[package]]
-name = "ibank"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "alpha-vantage" },
-    { name = "flask" },
-    { name = "flask-cors" },
-    { name = "loguru" },
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "numpy", version = "2.3.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "pandas" },
-    { name = "pydantic" },
-    { name = "python-dotenv" },
-    { name = "requests" },
-    { name = "yfinance" },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "pytest" },
-    { name = "pytest-cov" },
-]
-production = [
-    { name = "gunicorn" },
-    { name = "waitress" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "alpha-vantage", specifier = ">=2.3.1" },
-    { name = "flask", specifier = ">=3.0.0" },
-    { name = "flask-cors", specifier = ">=4.0.0" },
-    { name = "gunicorn", marker = "extra == 'production'", specifier = ">=21.2.0" },
-    { name = "loguru", specifier = ">=0.7.2" },
-    { name = "numpy", specifier = ">=1.25.2" },
-    { name = "pandas", specifier = ">=2.1.0" },
-    { name = "pydantic", specifier = ">=2.4.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.4.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.1.0" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "requests", specifier = ">=2.31.0" },
-    { name = "waitress", marker = "extra == 'production'", specifier = ">=2.1.2" },
-    { name = "yfinance", specifier = ">=0.2.20" },
-]
-provides-extras = ["dev", "production"]
 
 [[package]]
 name = "idna"
