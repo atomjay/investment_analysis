@@ -6,11 +6,13 @@ import { api } from '@/lib/api-client'
 import { Header } from '@/components/layout/header'
 import { StockSearch } from '@/components/stock/stock-search'
 import { AnalysisResult } from '@/components/analysis/analysis-result'
+import { DataVerification } from '@/components/analysis/data-verification'
 import { AnalysisResponse, QuickAnalysisResponse } from '@/types'
 import toast from 'react-hot-toast'
 
 export default function HomePage() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | QuickAnalysisResponse | null>(null)
+  const [rawApiResponse, setRawApiResponse] = useState<any>(null)
   const [analysisType, setAnalysisType] = useState<'quick' | 'full'>('quick')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
 
@@ -22,9 +24,11 @@ export default function HomePage() {
       const result = await api.analyzeStock({
         symbol: symbol.toUpperCase(),
         analysis_type: type,
-        data_source: dataSource
+        data_source: dataSource as 'yahoo_finance' | 'alpha_vantage' | 'fmp'
       })
       
+      // 保存原始API響應以便數據驗證
+      setRawApiResponse(result)
       setAnalysisResult(result)
       toast.success(`${symbol} 分析完成！`)
       
@@ -65,7 +69,7 @@ export default function HomePage() {
 
       {/* Analysis Result Section */}
       {analysisResult && (
-        <section id="analysis-result" className="container-custom pb-16">
+        <section id="analysis-result" className="container-custom pb-16 space-y-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -74,6 +78,19 @@ export default function HomePage() {
             <AnalysisResult
               data={analysisResult}
               type={analysisType}
+            />
+          </motion.div>
+          
+          {/* Data Verification Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="bg-white rounded-lg shadow-lg p-6"
+          >
+            <DataVerification
+              data={analysisResult}
+              rawApiResponse={rawApiResponse}
             />
           </motion.div>
         </section>

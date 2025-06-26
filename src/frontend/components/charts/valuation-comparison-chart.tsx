@@ -11,10 +11,11 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts'
-import { ValuationMethod } from '@/types'
+
+import { ValuationResult } from '@/types'
 
 interface ValuationComparisonChartProps {
-  data: ValuationMethod[]
+  data: ValuationResult[]
   currentPrice: number
 }
 
