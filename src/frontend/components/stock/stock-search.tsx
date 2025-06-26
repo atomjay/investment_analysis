@@ -19,16 +19,20 @@ export function StockSearch({ onAnalyze, loading }: StockSearchProps) {
   useEffect(() => {
     const fetchDataSources = async () => {
       try {
+        console.log('Fetching data sources from API...')
         const sources = await api.getDataSources()
+        console.log('Data sources fetched successfully:', sources)
         setDataSources(sources)
         
         // 選擇第一個可用的數據源
         const availableSource = Object.keys(sources).find(key => sources[key].available)
+        console.log('Available source found:', availableSource)
         if (availableSource) {
           setSelectedDataSource(availableSource)
         }
       } catch (error) {
         console.error('Failed to fetch data sources:', error)
+        console.error('Error details:', error)
         toast.error('無法載入數據源')
       } finally {
         setLoadingDataSources(false)
@@ -168,7 +172,7 @@ export function StockSearch({ onAnalyze, loading }: StockSearchProps) {
                         <div className="mt-2">
                           <p className="text-xs text-gray-600 font-medium mb-1">可用分析:</p>
                           <ul className="text-xs text-gray-500 space-y-0.5">
-                            {source.features.map((feature, index) => (
+                            {source.features.map((feature: string, index: number) => (
                               <li key={index}>• {feature}</li>
                             ))}
                           </ul>
