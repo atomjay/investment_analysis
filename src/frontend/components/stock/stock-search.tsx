@@ -89,15 +89,15 @@ export function StockSearch({ onAnalyze, loading }: StockSearchProps) {
                 id="symbol"
                 value={symbol}
                 onChange={handleSymbolChange}
-                placeholder="例如: AAPL, MSFT, GOOGL..."
+                placeholder="例如: AAPL, 2330.TW, 0700.HK..."
                 className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-lg"
                 disabled={loading}
-                maxLength={10}
+                maxLength={15}
                 autoComplete="off"
               />
             </div>
             <p className="mt-2 text-sm text-gray-500">
-              請輸入美股代號，例如 AAPL (蘋果)、MSFT (微軟)
+              支援全球股票：美股 (AAPL)、台股 (2330.TW)、港股 (0700.HK)、中股ADR (BABA)
             </p>
           </div>
 

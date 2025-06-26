@@ -205,31 +205,47 @@ class YahooFinanceDataFetcher:
     def validate_symbol(self, symbol: str) -> bool:
         """驗證股票代號格式
         
-        Yahoo Finance 支援所有美股代號，只需要驗證基本格式
+        Yahoo Finance 支援全球股票：
+        - 美股: AAPL, MSFT, GOOGL
+        - 台股: 2330.TW, 2454.TW
+        - 港股: 0700.HK, 0941.HK
+        - 中股 ADR: BABA, JD, BIDU
         """
         if not symbol or not isinstance(symbol, str):
             return False
         
         clean_symbol = symbol.upper().strip()
         
-        # 基本長度檢查
-        if len(clean_symbol) < 1 or len(clean_symbol) > 10:
+        # 基本長度檢查 (包含交易所後綴)
+        if len(clean_symbol) < 1 or len(clean_symbol) > 15:
             return False
         
-        # 允許字母數字，以及常見的股票代號格式（如 BRK.A, BRK-A）
+        # 允許字母數字和常見的格式（如 BRK.A, 2330.TW, 0700.HK）
         return clean_symbol.replace(".", "").replace("-", "").isalnum()
     
     def get_supported_symbols(self) -> List[str]:
         """獲取支援的股票代號列表
         
-        注意：Yahoo Finance 支援所有美股股票代號，
-        這裡返回熱門股票作為示例，實際上可以輸入任何有效的美股代號
+        注意：Yahoo Finance 支援全球股票：
+        - 美股: AAPL, MSFT 等
+        - 台股: 2330.TW (台積電), 2454.TW (聯發科) 等
+        - 港股: 0700.HK (騰訊), 0941.HK (中國移動) 等
+        - 中股 ADR: BABA (阿里巴巴), JD (京東) 等
+        
+        以下為熱門股票示例，實際上可以輸入任何有效的股票代號
         """
         return [
+            # 美股
             "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA",
             "JPM", "JNJ", "PFE", "WMT", "PG", "HD", "DIS", "NFLX",
             "CRM", "ORCL", "INTC", "CSCO", "IBM", "ADBE", "COP",
-            "XOM", "CVX", "BA", "CAT", "GE", "MMM", "HON", "UPS"
+            "XOM", "CVX", "BA", "CAT", "GE", "MMM", "HON", "UPS",
+            # 台股示例
+            "2330.TW", "2454.TW", "2317.TW", "1303.TW", "3008.TW",
+            # 港股示例
+            "0700.HK", "0941.HK", "1299.HK",
+            # 中股 ADR
+            "BABA", "JD", "BIDU", "NIO", "XPEV"
         ]
     
     def get_market_status(self) -> Dict[str, str]:

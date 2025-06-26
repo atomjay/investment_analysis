@@ -284,8 +284,14 @@ def supported_symbols():
         popular_symbols = analysis_engine.data_fetcher.get_supported_symbols()
         return jsonify({
             'symbols': popular_symbols,
-            'note': '支援所有美股股票代號，可以輸入任何有效的美股代號進行分析',
-            'popular_only': '以上為熱門股票示例，非全部支援清單'
+            'note': '支援全球股票代號：美股(AAPL)、台股(2330.TW)、港股(0700.HK)、中股ADR(BABA)',
+            'popular_only': '以上為熱門股票示例，實際支援範圍更廣',
+            'format_examples': {
+                '美股': 'AAPL, MSFT, GOOGL',
+                '台股': '2330.TW (台積電), 2454.TW (聯發科)',
+                '港股': '0700.HK (騰訊), 0941.HK (中國移動)',
+                '中股ADR': 'BABA (阿里巴巴), JD (京東)'
+            }
         })
     except Exception as e:
         return jsonify({'error': f'獲取支援股票列表失敗: {str(e)}'}), 500
