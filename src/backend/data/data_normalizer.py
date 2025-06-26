@@ -18,6 +18,7 @@ class DataNormalizer:
         
         # 標準單位定義
         self.STANDARD_UNITS = {
+            # 基本財務數據
             'market_cap': 'USD',           # 市值：美元
             'price': 'USD',                # 股價：美元
             'revenue': 'USD',              # 營收：美元
@@ -25,15 +26,55 @@ class DataNormalizer:
             'total_assets': 'USD',         # 總資產：美元
             'total_debt': 'USD',           # 總債務：美元
             'free_cash_flow': 'USD',       # 自由現金流：美元
+            'operating_cash_flow': 'USD',  # 營運現金流：美元
+            'total_equity': 'USD',         # 股東權益：美元
+            'ebitda': 'USD',              # EBITDA：美元
+            'gross_profit': 'USD',        # 毛利潤：美元
+            'operating_income': 'USD',    # 營業利潤：美元
+            
+            # 估值倍數
             'pe_ratio': 'ratio',           # 市盈率：倍數
             'ev_ebitda': 'ratio',          # EV/EBITDA：倍數
             'pb_ratio': 'ratio',           # 市淨率：倍數
             'ps_ratio': 'ratio',           # 市銷率：倍數
+            'peg_ratio': 'ratio',          # PEG比率：倍數
+            'price_to_cf': 'ratio',        # 市現率：倍數
+            'ev_to_sales': 'ratio',        # EV/Sales：倍數
+            'ev_to_fcf': 'ratio',          # EV/FCF：倍數
+            
+            # 獲利能力指標
+            'roe': 'percentage',           # 股東權益報酬率：百分比
+            'roa': 'percentage',           # 總資產報酬率：百分比
+            'roic': 'percentage',          # 投入資本報酬率：百分比
+            'gross_margin': 'percentage',  # 毛利率：百分比
+            'operating_margin': 'percentage', # 營業利潤率：百分比
+            'net_margin': 'percentage',    # 淨利率：百分比
+            'ebitda_margin': 'percentage', # EBITDA利潤率：百分比
+            
+            # 財務健康指標
+            'debt_to_equity': 'ratio',     # 負債權益比：倍數
+            'debt_to_assets': 'ratio',     # 負債資產比：倍數
+            'current_ratio': 'ratio',      # 流動比率：倍數
+            'quick_ratio': 'ratio',        # 速動比率：倍數
+            'interest_coverage': 'ratio',  # 利息保障倍數：倍數
+            
+            # 成長性指標
+            'revenue_growth': 'percentage', # 營收成長率：百分比
+            'net_income_growth': 'percentage', # 淨利成長率：百分比
+            'eps_growth': 'percentage',    # EPS成長率：百分比
+            'dividend_yield': 'percentage', # 股息殖利率：百分比
+            
+            # 每股數據
+            'eps': 'USD',                  # 每股盈餘：美元
+            'book_value_per_share': 'USD', # 每股淨值：美元
+            'dividend_per_share': 'USD',   # 每股股息：美元
+            'shares_outstanding': 'shares', # 流通股數：股
         }
         
         # 數據源單位映射
         self.DATA_SOURCE_UNITS = {
             'alpha_vantage': {
+                # 基本財務數據
                 'MarketCapitalization': ('market_cap', 'USD', 1),
                 'Price': ('price', 'USD', 1),
                 'CurrentPrice': ('price', 'USD', 1),
@@ -41,11 +82,45 @@ class DataNormalizer:
                 'NetIncomeTTM': ('net_income', 'USD', 1),
                 'TotalAssets': ('total_assets', 'USD', 1),
                 'TotalDebt': ('total_debt', 'USD', 1),
-                'OperatingCashflowTTM': ('free_cash_flow', 'USD', 1),
+                'OperatingCashflowTTM': ('operating_cash_flow', 'USD', 1),
+                'EBITDA': ('ebitda', 'USD', 1),
+                'GrossProfitTTM': ('gross_profit', 'USD', 1),
+                'OperatingIncomeTTM': ('operating_income', 'USD', 1),
+                'ShareholdersEquity': ('total_equity', 'USD', 1),
+                
+                # 估值倍數
                 'PERatio': ('pe_ratio', 'ratio', 1),
                 'EVToEBITDA': ('ev_ebitda', 'ratio', 1),
+                'PriceToBookRatio': ('pb_ratio', 'ratio', 1),
+                'PriceToSalesRatioTTM': ('ps_ratio', 'ratio', 1),
+                'PEGRatio': ('peg_ratio', 'ratio', 1),
+                
+                # 獲利能力指標
+                'ReturnOnEquityTTM': ('roe', 'percentage', 0.01),  # Alpha Vantage 返回小數
+                'ReturnOnAssetsTTM': ('roa', 'percentage', 0.01),
+                'GrossProfitMargin': ('gross_margin', 'percentage', 0.01),
+                'OperatingMarginTTM': ('operating_margin', 'percentage', 0.01),
+                'ProfitMargin': ('net_margin', 'percentage', 0.01),
+                
+                # 財務健康指標
+                'DebtToEquityRatio': ('debt_to_equity', 'ratio', 1),
+                'CurrentRatio': ('current_ratio', 'ratio', 1),
+                'QuickRatio': ('quick_ratio', 'ratio', 1),
+                
+                # 成長性指標
+                'RevenueGrowthTTM': ('revenue_growth', 'percentage', 0.01),
+                'NetIncomeGrowthTTM': ('net_income_growth', 'percentage', 0.01),
+                'EPSGrowthTTM': ('eps_growth', 'percentage', 0.01),
+                'DividendYield': ('dividend_yield', 'percentage', 0.01),
+                
+                # 每股數據
+                'EPS': ('eps', 'USD', 1),
+                'BookValue': ('book_value_per_share', 'USD', 1),
+                'DividendPerShare': ('dividend_per_share', 'USD', 1),
+                'SharesOutstanding': ('shares_outstanding', 'shares', 1),
             },
             'fmp': {
+                # 基本財務數據
                 'marketCap': ('market_cap', 'USD', 1),
                 'price': ('price', 'USD', 1),
                 'revenue': ('revenue', 'USD', 1),
@@ -53,12 +128,52 @@ class DataNormalizer:
                 'totalAssets': ('total_assets', 'USD', 1),
                 'totalDebt': ('total_debt', 'USD', 1),
                 'freeCashFlow': ('free_cash_flow', 'USD', 1),
+                'operatingCashFlow': ('operating_cash_flow', 'USD', 1),
+                'totalStockholdersEquity': ('total_equity', 'USD', 1),
+                'ebitda': ('ebitda', 'USD', 1),
+                'grossProfit': ('gross_profit', 'USD', 1),
+                'operatingIncome': ('operating_income', 'USD', 1),
+                
+                # 估值倍數
                 'peRatio': ('pe_ratio', 'ratio', 1),
                 'peRatioTTM': ('pe_ratio', 'ratio', 1),
                 'enterpriseValueOverEBITDA': ('ev_ebitda', 'ratio', 1),
                 'evToEbitda': ('ev_ebitda', 'ratio', 1),
                 'priceToBookRatio': ('pb_ratio', 'ratio', 1),
                 'priceToSalesRatio': ('ps_ratio', 'ratio', 1),
+                'pegRatio': ('peg_ratio', 'ratio', 1),
+                'priceToCashFlowRatio': ('price_to_cf', 'ratio', 1),
+                'enterpriseValueToRevenue': ('ev_to_sales', 'ratio', 1),
+                
+                # 獲利能力指標
+                'roe': ('roe', 'percentage', 1),  # FMP 已是百分比
+                'roa': ('roa', 'percentage', 1),
+                'roic': ('roic', 'percentage', 1),
+                'grossProfitMargin': ('gross_margin', 'percentage', 1),
+                'operatingProfitMargin': ('operating_margin', 'percentage', 1),
+                'netProfitMargin': ('net_margin', 'percentage', 1),
+                'ebitdaMargin': ('ebitda_margin', 'percentage', 1),
+                
+                # 財務健康指標
+                'debtToEquity': ('debt_to_equity', 'ratio', 1),
+                'debtToAssets': ('debt_to_assets', 'ratio', 1),
+                'currentRatio': ('current_ratio', 'ratio', 1),
+                'quickRatio': ('quick_ratio', 'ratio', 1),
+                'interestCoverage': ('interest_coverage', 'ratio', 1),
+                
+                # 成長性指標
+                'revenueGrowth': ('revenue_growth', 'percentage', 1),
+                'netIncomeGrowth': ('net_income_growth', 'percentage', 1),
+                'epsGrowth': ('eps_growth', 'percentage', 1),
+                'dividendYield': ('dividend_yield', 'percentage', 1),
+                
+                # 每股數據
+                'eps': ('eps', 'USD', 1),
+                'epsTTM': ('eps', 'USD', 1),
+                'bookValuePerShare': ('book_value_per_share', 'USD', 1),
+                'dividendPerShare': ('dividend_per_share', 'USD', 1),
+                'sharesOutstanding': ('shares_outstanding', 'shares', 1),
+                'weightedAverageShsOut': ('shares_outstanding', 'shares', 1),
             },
             'yahoo_finance': {
                 'marketCap': ('market_cap', 'USD', 1),
@@ -183,6 +298,7 @@ class DataNormalizer:
         try:
             # 定義合理範圍
             reasonable_ranges = {
+                # 基本財務數據 (美元)
                 'market_cap': (1e6, 5e12),      # 100萬到5萬億美元
                 'price': (0.01, 10000),         # 1分到1萬美元
                 'revenue': (0, 1e12),           # 0到1萬億美元
@@ -190,10 +306,49 @@ class DataNormalizer:
                 'total_assets': (0, 5e12),      # 0到5萬億美元
                 'total_debt': (0, 2e12),        # 0到2萬億美元
                 'free_cash_flow': (-1e11, 1e11), # -1000億到1000億美元
+                'operating_cash_flow': (-1e11, 1e11), # -1000億到1000億美元
+                'total_equity': (0, 5e12),      # 0到5萬億美元
+                'ebitda': (-1e11, 1e11),        # -1000億到1000億美元
+                'gross_profit': (-1e11, 1e11),  # -1000億到1000億美元
+                'operating_income': (-1e11, 1e11), # -1000億到1000億美元
+                
+                # 估值倍數
                 'pe_ratio': (0, 1000),          # 0到1000倍
                 'ev_ebitda': (0, 500),          # 0到500倍
                 'pb_ratio': (0, 100),           # 0到100倍
                 'ps_ratio': (0, 1000),          # 0到1000倍
+                'peg_ratio': (0, 10),           # 0到10倍
+                'price_to_cf': (0, 500),        # 0到500倍
+                'ev_to_sales': (0, 500),        # 0到500倍
+                'ev_to_fcf': (0, 1000),         # 0到1000倍
+                
+                # 獲利能力指標 (百分比)
+                'roe': (-100, 200),             # -100%到200%
+                'roa': (-50, 100),              # -50%到100%
+                'roic': (-100, 200),            # -100%到200%
+                'gross_margin': (-50, 100),     # -50%到100%
+                'operating_margin': (-100, 100), # -100%到100%
+                'net_margin': (-100, 100),      # -100%到100%
+                'ebitda_margin': (-100, 100),   # -100%到100%
+                
+                # 財務健康指標
+                'debt_to_equity': (0, 20),      # 0到20倍
+                'debt_to_assets': (0, 1),       # 0到1（100%）
+                'current_ratio': (0, 50),       # 0到50倍
+                'quick_ratio': (0, 50),         # 0到50倍
+                'interest_coverage': (-100, 1000), # -100到1000倍
+                
+                # 成長性指標 (百分比)
+                'revenue_growth': (-100, 1000), # -100%到1000%
+                'net_income_growth': (-500, 1000), # -500%到1000%
+                'eps_growth': (-500, 1000),     # -500%到1000%
+                'dividend_yield': (0, 50),      # 0%到50%
+                
+                # 每股數據
+                'eps': (-100, 1000),            # -100到1000美元
+                'book_value_per_share': (-100, 10000), # -100到10000美元
+                'dividend_per_share': (0, 100), # 0到100美元
+                'shares_outstanding': (1e6, 1e12), # 100萬到1萬億股
             }
             
             if field_name in reasonable_ranges:

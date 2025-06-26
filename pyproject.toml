@@ -1,0 +1,41 @@
+[project]
+name = "ibank"
+version = "0.1.0"
+description = "Professional Investment Banking Analysis Tool - 專業級外商投資銀行分析工具"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    # Web Framework
+    "flask>=3.0.0",
+    "flask-cors>=4.0.0",
+    
+    # Data Analysis & Computation
+    "numpy>=1.25.2",
+    "pandas>=2.1.0",
+    
+    # HTTP Requests
+    "requests>=2.31.0",
+    
+    # Data Validation
+    "pydantic>=2.4.0",
+    
+    # Environment Configuration
+    "python-dotenv>=1.0.0",
+    
+    # Real Data Sources
+    "yfinance>=0.2.20",
+    "alpha-vantage>=2.3.1",
+    
+    # Logging
+    "loguru>=0.7.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+]
+production = [
+    "gunicorn>=21.2.0",
+    "waitress>=2.1.2",
+]

@@ -24,19 +24,63 @@ class RecommendationType(Enum):
 
 @dataclass
 class StockData:
-    """股票基本數據"""
+    """股票基本數據 - 支援完整財務指標"""
+    # 基本信息
     symbol: str
     company_name: str
     sector: str
+    
+    # 基本財務數據 (USD)
     market_cap: float
     price: float
-    pe_ratio: Optional[float] = None
-    ev_ebitda: Optional[float] = None
     revenue: Optional[float] = None
     net_income: Optional[float] = None
     total_assets: Optional[float] = None
     total_debt: Optional[float] = None
     free_cash_flow: Optional[float] = None
+    operating_cash_flow: Optional[float] = None
+    total_equity: Optional[float] = None
+    ebitda: Optional[float] = None
+    gross_profit: Optional[float] = None
+    operating_income: Optional[float] = None
+    
+    # 估值倍數
+    pe_ratio: Optional[float] = None
+    ev_ebitda: Optional[float] = None
+    pb_ratio: Optional[float] = None
+    ps_ratio: Optional[float] = None
+    peg_ratio: Optional[float] = None
+    price_to_cf: Optional[float] = None
+    ev_to_sales: Optional[float] = None
+    ev_to_fcf: Optional[float] = None
+    
+    # 獲利能力指標 (%)
+    roe: Optional[float] = None
+    roa: Optional[float] = None
+    roic: Optional[float] = None
+    gross_margin: Optional[float] = None
+    operating_margin: Optional[float] = None
+    net_margin: Optional[float] = None
+    ebitda_margin: Optional[float] = None
+    
+    # 財務健康指標
+    debt_to_equity: Optional[float] = None
+    debt_to_assets: Optional[float] = None
+    current_ratio: Optional[float] = None
+    quick_ratio: Optional[float] = None
+    interest_coverage: Optional[float] = None
+    
+    # 成長性指標 (%)
+    revenue_growth: Optional[float] = None
+    net_income_growth: Optional[float] = None
+    eps_growth: Optional[float] = None
+    dividend_yield: Optional[float] = None
+    
+    # 每股數據
+    eps: Optional[float] = None
+    book_value_per_share: Optional[float] = None
+    dividend_per_share: Optional[float] = None
+    shares_outstanding: Optional[float] = None
 
 @dataclass
 class ValuationMetrics:

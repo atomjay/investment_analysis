@@ -282,20 +282,64 @@ class RealStockDataFetcher:
             if completeness_score < 0.5:
                 logger.warning(f"{symbol} 數據完整性較低 ({completeness_score:.2f})")
             
-            # 創建 StockData 對象（現在使用標準化數據）
+            # 創建 StockData 對象（使用完整的標準化數據）
             stock_data = StockData(
+                # 基本信息
                 symbol=symbol.upper(),
                 company_name=self._get_company_name_from_raw(alpha_data, fmp_data),
                 sector=self._get_sector_from_raw(alpha_data, fmp_data),
+                
+                # 基本財務數據
                 market_cap=merged_data.get('market_cap'),
                 price=merged_data.get('price'),
-                pe_ratio=merged_data.get('pe_ratio'),
-                ev_ebitda=merged_data.get('ev_ebitda'),
                 revenue=merged_data.get('revenue'),
                 net_income=merged_data.get('net_income'),
                 total_assets=merged_data.get('total_assets'),
                 total_debt=merged_data.get('total_debt'),
-                free_cash_flow=merged_data.get('free_cash_flow')
+                free_cash_flow=merged_data.get('free_cash_flow'),
+                operating_cash_flow=merged_data.get('operating_cash_flow'),
+                total_equity=merged_data.get('total_equity'),
+                ebitda=merged_data.get('ebitda'),
+                gross_profit=merged_data.get('gross_profit'),
+                operating_income=merged_data.get('operating_income'),
+                
+                # 估值倍數
+                pe_ratio=merged_data.get('pe_ratio'),
+                ev_ebitda=merged_data.get('ev_ebitda'),
+                pb_ratio=merged_data.get('pb_ratio'),
+                ps_ratio=merged_data.get('ps_ratio'),
+                peg_ratio=merged_data.get('peg_ratio'),
+                price_to_cf=merged_data.get('price_to_cf'),
+                ev_to_sales=merged_data.get('ev_to_sales'),
+                ev_to_fcf=merged_data.get('ev_to_fcf'),
+                
+                # 獲利能力指標
+                roe=merged_data.get('roe'),
+                roa=merged_data.get('roa'),
+                roic=merged_data.get('roic'),
+                gross_margin=merged_data.get('gross_margin'),
+                operating_margin=merged_data.get('operating_margin'),
+                net_margin=merged_data.get('net_margin'),
+                ebitda_margin=merged_data.get('ebitda_margin'),
+                
+                # 財務健康指標
+                debt_to_equity=merged_data.get('debt_to_equity'),
+                debt_to_assets=merged_data.get('debt_to_assets'),
+                current_ratio=merged_data.get('current_ratio'),
+                quick_ratio=merged_data.get('quick_ratio'),
+                interest_coverage=merged_data.get('interest_coverage'),
+                
+                # 成長性指標
+                revenue_growth=merged_data.get('revenue_growth'),
+                net_income_growth=merged_data.get('net_income_growth'),
+                eps_growth=merged_data.get('eps_growth'),
+                dividend_yield=merged_data.get('dividend_yield'),
+                
+                # 每股數據
+                eps=merged_data.get('eps'),
+                book_value_per_share=merged_data.get('book_value_per_share'),
+                dividend_per_share=merged_data.get('dividend_per_share'),
+                shares_outstanding=merged_data.get('shares_outstanding')
             )
             
             # 記錄數據來源信息
