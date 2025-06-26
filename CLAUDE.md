@@ -1,9 +1,9 @@
-# CLAUDE.md - ibank
+# CLAUDE.md - CapitalCore
 
 > **Documentation Version**: 1.0  
 > **Last Updated**: 2025-06-26  
-> **Project**: ibank  
-> **Description**: Simple banking project with proper structure  
+> **Project**: CapitalCore  
+> **Description**: Professional investment banking analysis platform with advanced valuation tools  
 > **Features**: GitHub auto-backup, Task agents, technical debt prevention
 
 This file provides essential guidance to Claude Code (claude.ai/code) when working with code in this repository.
@@ -75,7 +75,7 @@ This file provides essential guidance to Claude Code (claude.ai/code) when worki
 
 ## 🏗️ PROJECT OVERVIEW
 
-**iBank** - 專業級外商投資銀行分析工具，整合四種權威估值方法，提供智能投資建議。
+**CapitalCore** - 專業級外商投資銀行分析工具，整合四種權威估值方法，提供智能投資建議。
 
 ### 📊 **核心功能已完成**
 - ✅ **四種估值方法**: CCA相對估值法、DCF現金流折現法、PTA交易比率法、資產基礎法
@@ -220,7 +220,7 @@ cd src/frontend && npm run start    # 啟動前端生產服務
 ## 📝 **SESSION HISTORY & COMPACT RECORDS**
 
 ### 🔄 **最近完成的工作 (2025-06-26)**
-- ✅ **核心系統完成**: iBank投資分析工具主要功能已全部完成
+- ✅ **核心系統完成**: CapitalCore投資分析工具主要功能已全部完成
   - 後端API系統: Flask + RESTful端點 + 四種估值引擎
   - 前端UI系統: Next.js 14 + TypeScript + TailwindCSS
   - 圖表可視化: Recharts整合，估值比較圖表
@@ -236,6 +236,12 @@ cd src/frontend && npm run start    # 啟動前端生產服務
   - Git版本控制，GitHub倉庫同步
   - 依賴管理: 前端npm，後端uv環境管理
   - 代碼品質: TypeScript完整類型安全
+- ✅ **數據驗證功能增強** (當前工作階段完成)
+  - 後端估值引擎增強: DCF與CCA分析包含詳細計算數值
+  - 原始API數據追蹤: Yahoo Finance響應數據完整記錄
+  - 前端數據驗證組件: 顯示所有計算變數實際數值
+  - 計算透明度提升: WACC、終值、同業倍數等完整計算過程
+  - API數據流優化: raw_api_data與calculation_details完整傳輸
 - ✅ **技術債務預防**: 遵循最佳實踐和代碼規範
   - 單一來源真實性原則
   - 適當的模組化結構
@@ -251,6 +257,20 @@ cd src/frontend && npm run start    # 啟動前端生產服務
 - 成功避免創建重複檔案
 - 使用適當的環境管理工具 (uv)
 - 遵循專案配置檔案結構 (pyproject.toml)
+
+### 📊 **當前工作階段成果詳細記錄**
+- **主要成就**: 數據驗證功能完整實現，提升投資分析透明度
+- **技術實現**:
+  - 後端模組增強: `dcf_analyzer.py`, `cca_analyzer.py`, `yahoo_finance_fetcher.py`
+  - API層優化: `web_app.py`, `analysis_engine.py` 增加詳細數據返回
+  - 前端組件改進: `data-verification.tsx` 顯示實際計算數值
+  - 類型定義擴展: `types.py` 新增 calculation_details 和 raw_data_sources 字段
+- **用戶體驗提升**:
+  - 估值方法顯示具體數值: WACC=8.00%, 終值=X億, 同業P/E=25.2x
+  - 原始Yahoo Finance API數據完整展示: 150+個info字段和歷史價格數據
+  - 計算過程完全透明化: 每個變數都有實際數值而非公式符號
+  - API數據流向清晰追蹤: 從原始數據到最終推薦的完整路徑
+- **服務狀態**: 前後端服務運行正常，所有功能測試通過
 
 ---
 

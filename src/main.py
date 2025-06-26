@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ibank - Investment Banking Analysis Tool
+CapitalCore - Investment Banking Analysis Tool
 外商投資銀行分析工具
 
 Main entry point for the investment analysis system
@@ -8,7 +8,7 @@ Main entry point for the investment analysis system
 
 def main():
     """Main function"""
-    print("ibank - Investment Banking Analysis Tool")
+    print("CapitalCore - Investment Banking Analysis Tool")
     print("外商投資銀行分析工具")
     print("Ready for development!")
     print("支援四種估值方法:")

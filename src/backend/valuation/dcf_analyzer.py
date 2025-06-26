@@ -163,7 +163,7 @@ class DCFAnalyzer:
                     "free_cash_flow": target_stock.free_cash_flow
                 },
                 "data_sources": ["Yahoo Finance", "Alpha Vantage", "FMP"],
-                "calculation_engine": "iBank DCF Analyzer v1.0"
+                "calculation_engine": "CapitalCore DCF Analyzer v1.0"
             }
         )
     

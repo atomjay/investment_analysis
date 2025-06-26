@@ -56,13 +56,17 @@ class YahooFinanceDataFetcher:
             else:
                 current_price = hist['Close'].iloc[-1] if not hist.empty else 0
             
-            # 保存原始API響應數據以供驗證
-            self.raw_api_response = {
+            # 為這次特定請求保存原始API響應數據
+            current_raw_response = {
                 'yahoo_finance_info': info,
                 'yahoo_finance_history': hist.to_dict('records') if not hist.empty else [],
                 'fetch_timestamp': datetime.now().isoformat(),
-                'api_source': 'yfinance library'
+                'api_source': 'yfinance library',
+                'requested_symbol': symbol.upper()  # 明確記錄請求的股票代號
             }
+            
+            # 更新類別變數（保持向後兼容）
+            self.raw_api_response = current_raw_response
             
             # 準備原始數據進行標準化
             raw_data = {
@@ -102,7 +106,8 @@ class YahooFinanceDataFetcher:
                 net_income=normalized_data.get('net_income'),
                 total_assets=normalized_data.get('total_assets'),
                 total_debt=normalized_data.get('total_debt'),
-                free_cash_flow=normalized_data.get('free_cash_flow')
+                free_cash_flow=normalized_data.get('free_cash_flow'),
+                raw_api_data=current_raw_response  # 附加原始API數據
             )
             
             logger.info(f"成功獲取 {stock_data.company_name} 數據")

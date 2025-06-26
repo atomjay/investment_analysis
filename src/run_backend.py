@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-iBank Backend Server Launcher
+CapitalCore Backend Server Launcher
 啟動投資分析後端服務器
 """
 
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 def main():
     """啟動後端服務器"""
     try:
-        logger.info("正在啟動 iBank 投資分析後端服務器...")
+        logger.info("正在啟動 CapitalCore 投資分析後端服務器...")
         
         # 檢查Python版本
         if sys.version_info < (3, 8):

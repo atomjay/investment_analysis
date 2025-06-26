@@ -1,4 +1,4 @@
-// Frontend TypeScript types for iBank Investment Analysis Tool
+// Frontend TypeScript types for CapitalCore Investment Analysis Tool
 
 export type RecommendationType = 
   | 'strong_buy' 

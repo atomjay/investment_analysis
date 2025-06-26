@@ -7,14 +7,14 @@ import { Toaster } from 'react-hot-toast'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'iBank - 外商投資銀行分析工具',
+  title: 'CapitalCore - 外商投資銀行分析工具',
   description: '專業級投資分析工具，提供四種估值方法：相對估值法(CCA)、現金流折現法(DCF)、交易比率法(PTA)、資產基礎法，智能生成買賣建議',
   keywords: '投資分析, 股票估值, DCF, CCA, 投資建議, 外商投資銀行',
-  authors: [{ name: 'iBank Team' }],
+  authors: [{ name: 'CapitalCore Team' }],
   viewport: 'width=device-width, initial-scale=1',
   robots: 'index, follow',
   openGraph: {
-    title: 'iBank - 外商投資銀行分析工具',
+    title: 'CapitalCore - 外商投資銀行分析工具',
     description: '專業級投資分析工具，提供多重估值方法和智能投資建議',
     type: 'website',
     locale: 'zh_TW',

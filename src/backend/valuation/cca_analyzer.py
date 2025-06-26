@@ -142,7 +142,7 @@ class CCAAnalyzer:
                     "total_assets": target_stock.total_assets
                 },
                 "data_sources": ["Yahoo Finance", "Alpha Vantage", "FMP"],
-                "calculation_engine": "iBank CCA Analyzer v1.0"
+                "calculation_engine": "CapitalCore CCA Analyzer v1.0"
             }
         )
     

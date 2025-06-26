@@ -1,7 +1,7 @@
 [project]
-name = "ibank"
+name = "capitalcore"
 version = "0.1.0"
-description = "Professional Investment Banking Analysis Tool - 專業級外商投資銀行分析工具"
+description = "CapitalCore - Professional Investment Banking Analysis Platform - 專業級外商投資銀行分析平台"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

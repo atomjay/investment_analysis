@@ -80,7 +80,7 @@ def after_request(response):
 def index():
     """API根路徑"""
     return jsonify({
-        'message': 'iBank Investment Analysis API',
+        'message': 'CapitalCore Investment Analysis API',
         'version': '1.0.0',
         'status': 'operational',
         'endpoints': {
@@ -212,7 +212,7 @@ def analyze_stock():
                     },
                     'data_source': data_source,
                     'fetch_timestamp': datetime.now().isoformat(),
-                    'raw_yahoo_finance_response': temp_engine.data_fetcher.get_raw_api_response() if hasattr(temp_engine.data_fetcher, 'get_raw_api_response') else {}
+                    'raw_yahoo_finance_response': report.stock_data.raw_api_data if report.stock_data.raw_api_data else {}
                 }
             }
         else:
@@ -435,7 +435,7 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
     debug = os.environ.get('FLASK_ENV') == 'development'
     
-    logger.info(f'Starting iBank API Server on port {port}')
+    logger.info(f'Starting CapitalCore API Server on port {port}')
     logger.info(f'Debug mode: {debug}')
     
     # 啟動API服務器

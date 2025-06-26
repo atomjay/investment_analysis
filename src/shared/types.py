@@ -81,6 +81,9 @@ class StockData:
     book_value_per_share: Optional[float] = None
     dividend_per_share: Optional[float] = None
     shares_outstanding: Optional[float] = None
+    
+    # 原始API數據 (用於數據驗證和調試)
+    raw_api_data: Optional[Dict[str, any]] = None
 
 @dataclass
 class ValuationMetrics:

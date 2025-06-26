@@ -20,15 +20,534 @@ interface DataVerificationProps {
   rawApiResponse?: any
 }
 
+// 估值方法數據卡片組件
+function ValuationMethodsDataCard({ methods, expandedSections, toggleSection }: {
+  methods: any[]
+  expandedSections: Record<string, boolean>
+  toggleSection: (section: string) => void
+}) {
+  const getMethodIcon = (method: string) => {
+    const icons: Record<string, string> = {
+      'comparable_companies_analysis': '📊',
+      'discounted_cash_flow': '💰',
+      'precedent_transactions_analysis': '🏢',
+      'asset_based_valuation': '🏗️'
+    }
+    return icons[method] || '📈'
+  }
+
+  const getMethodDisplayName = (method: string) => {
+    const mapping: Record<string, string> = {
+      'comparable_companies_analysis': 'CCA相對估值法',
+      'discounted_cash_flow': 'DCF現金流折現法',
+      'precedent_transactions_analysis': 'PTA交易比率法',
+      'asset_based_valuation': '資產基礎法'
+    }
+    return mapping[method] || method
+  }
+
+  return (
+    <div className="bg-gradient-to-br from-purple-900 via-purple-800 to-purple-900 rounded-xl border border-purple-700 overflow-hidden">
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4">
+        <h5 className="text-white font-bold text-lg flex items-center">
+          🧮 估值方法原始數據
+          <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded-full">
+            {methods.length} 個方法
+          </span>
+        </h5>
+        <p className="text-purple-100 text-sm mt-1">
+          詳細計算過程與數據來源追蹤
+        </p>
+      </div>
+
+      <div className="p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {methods.map((method, idx) => {
+            const sectionKey = `valuation_${method.method}`
+            const isExpanded = expandedSections[sectionKey]
+            const icon = getMethodIcon(method.method)
+            const displayName = getMethodDisplayName(method.method)
+            
+            return (
+              <div key={idx} className="bg-purple-800 rounded-lg border border-purple-600 overflow-hidden">
+                <button
+                  onClick={() => toggleSection(sectionKey)}
+                  className="w-full px-4 py-3 text-left hover:bg-purple-700 transition-colors flex items-center justify-between"
+                >
+                  <div className="flex items-center">
+                    <span className="text-2xl mr-3">{icon}</span>
+                    <div>
+                      <div className="text-white font-medium text-sm">{displayName}</div>
+                      <div className="text-purple-300 text-xs">
+                        目標價: ${method.target_price.toFixed(2)} | 
+                        信心度: {(method.confidence_level * 100).toFixed(0)}%
+                      </div>
+                    </div>
+                  </div>
+                  {isExpanded ? (
+                    <ChevronDownIcon className="h-4 w-4 text-purple-400" />
+                  ) : (
+                    <ChevronRightIcon className="h-4 w-4 text-purple-400" />
+                  )}
+                </button>
+                
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-4 pb-4 bg-purple-750">
+                        {/* 基本指標 */}
+                        <div className="bg-purple-700 rounded p-3 mb-3">
+                          <h6 className="text-purple-200 font-semibold text-xs mb-2">📊 基本指標</h6>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-purple-300">目標價格:</span>
+                              <span className="text-green-400 font-mono">${method.target_price.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-purple-300">上漲潛力:</span>
+                              <span className={`font-mono ${method.upside_potential > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                {method.upside_potential.toFixed(1)}%
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-purple-300">信心水準:</span>
+                              <span className="text-blue-400 font-mono">{(method.confidence_level * 100).toFixed(0)}%</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-purple-300">方法類型:</span>
+                              <span className="text-yellow-400 font-mono">{method.method}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 數據來源 */}
+                        {(method as any).raw_data_sources && (
+                          <div className="bg-purple-700 rounded p-3 mb-3">
+                            <h6 className="text-purple-200 font-semibold text-xs mb-2">🔍 數據來源</h6>
+                            <div className="space-y-1 text-xs">
+                              {(method as any).raw_data_sources.data_sources?.map((source: string, i: number) => (
+                                <div key={i} className="flex items-center">
+                                  <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                                  <span className="text-purple-200">{source}</span>
+                                </div>
+                              ))}
+                              {(method as any).raw_data_sources.calculation_engine && (
+                                <div className="flex items-center">
+                                  <span className="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
+                                  <span className="text-purple-200">引擎: {(method as any).raw_data_sources.calculation_engine}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 計算詳情 */}
+                        {(method as any).calculation_details && (
+                          <div className="bg-purple-700 rounded p-3">
+                            <h6 className="text-purple-200 font-semibold text-xs mb-2">🧮 計算詳情</h6>
+                            <div className="space-y-2">
+                              {Object.entries((method as any).calculation_details).map(([key, value]) => {
+                                if (typeof value === 'object' && value !== null) {
+                                  return (
+                                    <details key={key} className="group">
+                                      <summary className="cursor-pointer text-purple-300 hover:text-purple-200 text-xs font-medium">
+                                        📁 {key.replace(/_/g, ' ').toUpperCase()}
+                                      </summary>
+                                      <div className="mt-1 ml-4 p-2 bg-purple-600 rounded text-xs">
+                                        <pre className="text-purple-100 whitespace-pre-wrap font-mono">
+                                          {JSON.stringify(value, null, 2)}
+                                        </pre>
+                                      </div>
+                                    </details>
+                                  )
+                                } else {
+                                  return (
+                                    <div key={key} className="flex justify-between text-xs">
+                                      <span className="text-purple-300">{key.replace(/_/g, ' ')}:</span>
+                                      <span className="text-white font-mono">{String(value)}</span>
+                                    </div>
+                                  )
+                                }
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Yahoo Finance 數據卡片組件
+function YahooFinanceDataCard({ rawData, expandedSections, toggleSection, copyJsonToClipboard, copySuccess }: {
+  rawData: any
+  expandedSections: Record<string, boolean>
+  toggleSection: (section: string) => void
+  copyJsonToClipboard: (data: any, buttonId: string) => Promise<void>
+  copySuccess: Record<string, boolean>
+}) {
+  const infoData = rawData.yahoo_finance_info || {}
+  const historyData = rawData.yahoo_finance_history || []
+  
+  // 組織數據為不同類別
+  const dataCategories = {
+    basic: {
+      title: '📊 基本信息',
+      icon: '📊',
+      data: Object.entries(infoData)
+        .filter(([key]) => ['longName', 'symbol', 'sector', 'industry', 'country', 'currency'].includes(key))
+    },
+    financial: {
+      title: '💰 財務指標',
+      icon: '💰',
+      data: Object.entries(infoData)
+        .filter(([key]) => ['currentPrice', 'marketCap', 'totalRevenue', 'netIncomeToCommon', 'totalAssets', 'totalDebt', 'freeCashflow'].includes(key))
+    },
+    valuation: {
+      title: '📈 估值倍數',
+      icon: '📈',
+      data: Object.entries(infoData)
+        .filter(([key]) => ['trailingPE', 'enterpriseToEbitda', 'priceToBook', 'priceToSalesTrailing12Months', 'pegRatio'].includes(key))
+    },
+    growth: {
+      title: '🚀 成長性指標',
+      icon: '🚀',
+      data: Object.entries(infoData)
+        .filter(([key]) => ['revenueGrowth', 'earningsGrowth', 'revenueQuarterlyGrowth', 'earningsQuarterlyGrowth'].includes(key))
+    },
+    dividends: {
+      title: '💎 股息信息',
+      icon: '💎',
+      data: Object.entries(infoData)
+        .filter(([key]) => ['dividendRate', 'dividendYield', 'payoutRatio', 'exDividendDate'].includes(key))
+    },
+    technical: {
+      title: '📊 技術指標',
+      icon: '📊',
+      data: Object.entries(infoData)
+        .filter(([key]) => ['beta', 'fiftyTwoWeekLow', 'fiftyTwoWeekHigh', 'averageVolume', 'volume'].includes(key))
+    }
+  }
+
+  const formatValue = (key: string, value: any) => {
+    if (value === null || value === undefined) return 'N/A'
+    if (typeof value === 'number') {
+      if (key.includes('Price') || key.includes('Cap') || key.includes('Revenue') || key.includes('Income') || key.includes('Assets') || key.includes('Debt') || key.includes('Cash')) {
+        if (value > 1e9) return `$${(value / 1e9).toFixed(1)}B`
+        if (value > 1e6) return `$${(value / 1e6).toFixed(1)}M`
+        if (value > 1e3) return `$${(value / 1e3).toFixed(1)}K`
+        return `$${value.toFixed(2)}`
+      }
+      if (key.includes('Ratio') || key.includes('PE') || key.includes('Beta')) {
+        return value.toFixed(2)
+      }
+      if (key.includes('Rate') || key.includes('Yield') || key.includes('Growth')) {
+        return `${(value * 100).toFixed(1)}%`
+      }
+      return value.toLocaleString()
+    }
+    if (typeof value === 'string' && value.length > 50) {
+      return value.substring(0, 50) + '...'
+    }
+    return String(value)
+  }
+
+  return (
+    <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-xl border border-gray-700 overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h5 className="text-white font-bold text-lg flex items-center">
+              🔗 Yahoo Finance API 完整數據
+              <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded-full">
+                {Object.keys(infoData).length} 個欄位
+              </span>
+            </h5>
+            <p className="text-blue-100 text-sm mt-1">
+              API 來源: {rawData.api_source} | 更新時間: {new Date(rawData.fetch_timestamp).toLocaleString('zh-TW')}
+            </p>
+          </div>
+          <button
+            onClick={() => copyJsonToClipboard(rawData, 'yahoo-header')}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 flex items-center space-x-2 ${
+              copySuccess['yahoo-header'] 
+                ? 'bg-green-500 text-white' 
+                : 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm'
+            }`}
+          >
+            {copySuccess['yahoo-header'] ? (
+              <>
+                <span className="text-sm">✓</span>
+                <span>已複製</span>
+              </>
+            ) : (
+              <>
+                <span className="text-sm">📋</span>
+                <span>複製完整數據</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-4">
+        {/* 數據分類卡片 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {Object.entries(dataCategories).map(([categoryKey, category]) => {
+            const sectionKey = `yahoo_${categoryKey}`
+            const isExpanded = expandedSections[sectionKey]
+            const hasData = category.data.length > 0
+            
+            if (!hasData) return null
+            
+            return (
+              <div key={categoryKey} className="bg-gray-800 rounded-lg border border-gray-600 overflow-hidden">
+                <button
+                  onClick={() => toggleSection(sectionKey)}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-700 transition-colors flex items-center justify-between"
+                >
+                  <div className="flex items-center">
+                    <span className="text-xl mr-2">{category.icon}</span>
+                    <div>
+                      <div className="text-white font-medium text-sm">{category.title}</div>
+                      <div className="text-gray-400 text-xs">{category.data.length} 個欄位</div>
+                    </div>
+                  </div>
+                  {isExpanded ? (
+                    <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+                  ) : (
+                    <ChevronRightIcon className="h-4 w-4 text-gray-400" />
+                  )}
+                </button>
+                
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-4 pb-4 bg-gray-750">
+                        <div className="space-y-2">
+                          {category.data.map(([key, value]) => (
+                            <div key={key} className="flex justify-between items-center py-1 border-b border-gray-600 last:border-b-0">
+                              <span className="text-gray-300 text-xs font-medium">{key}:</span>
+                              <span className="text-white text-xs font-mono ml-2 text-right">
+                                {formatValue(key, value)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* 歷史價格數據 */}
+        {historyData.length > 0 && (
+          <div className="bg-gray-800 rounded-lg border border-gray-600 overflow-hidden">
+            <button
+              onClick={() => toggleSection('yahoo_history')}
+              className="w-full px-4 py-3 text-left hover:bg-gray-700 transition-colors flex items-center justify-between"
+            >
+              <div className="flex items-center">
+                <span className="text-xl mr-2">📅</span>
+                <div>
+                  <div className="text-white font-medium text-sm">歷史價格數據</div>
+                  <div className="text-gray-400 text-xs">{historyData.length} 天數據</div>
+                </div>
+              </div>
+              {expandedSections['yahoo_history'] ? (
+                <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+              ) : (
+                <ChevronRightIcon className="h-4 w-4 text-gray-400" />
+              )}
+            </button>
+            
+            <AnimatePresence>
+              {expandedSections['yahoo_history'] && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-4 pb-4 bg-gray-750">
+                    <div className="grid grid-cols-1 gap-2">
+                      {historyData.slice(-10).reverse().map((day: any, idx: number) => (
+                        <div key={idx} className="bg-gray-700 rounded p-3 border border-gray-600">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-yellow-400 font-medium text-sm">
+                              {day.Date ? new Date(day.Date).toLocaleDateString('zh-TW') : `Day ${idx + 1}`}
+                            </span>
+                            <span className="text-gray-400 text-xs">
+                              成交量: {day.Volume ? day.Volume.toLocaleString() : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-4 gap-2 text-xs">
+                            <div>
+                              <div className="text-gray-400">開盤</div>
+                              <div className="text-green-400 font-mono">${day.Open?.toFixed(2) || 'N/A'}</div>
+                            </div>
+                            <div>
+                              <div className="text-gray-400">最高</div>
+                              <div className="text-red-400 font-mono">${day.High?.toFixed(2) || 'N/A'}</div>
+                            </div>
+                            <div>
+                              <div className="text-gray-400">最低</div>
+                              <div className="text-blue-400 font-mono">${day.Low?.toFixed(2) || 'N/A'}</div>
+                            </div>
+                            <div>
+                              <div className="text-gray-400">收盤</div>
+                              <div className="text-white font-mono font-bold">${day.Close?.toFixed(2) || 'N/A'}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* 完整JSON數據展開器 */}
+        <div className="bg-gray-800 rounded-lg border border-gray-600 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-700 transition-colors">
+            <button
+              onClick={() => toggleSection('yahoo_full_json')}
+              className="flex items-center flex-1 text-left"
+            >
+              <span className="text-xl mr-2">🔍</span>
+              <div>
+                <div className="text-white font-medium text-sm">完整 JSON 原始數據</div>
+                <div className="text-gray-400 text-xs">開發者模式 - 查看所有欄位</div>
+              </div>
+            </button>
+            <div className="flex items-center space-x-2 ml-4">
+              <button
+                onClick={() => copyJsonToClipboard(rawData, 'yahoo-json')}
+                className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center space-x-1 ${
+                  copySuccess['yahoo-json'] 
+                    ? 'bg-green-600 text-white' 
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                {copySuccess['yahoo-json'] ? (
+                  <>
+                    <span className="text-xs">✓</span>
+                    <span>已複製</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xs">📋</span>
+                    <span>複製JSON</span>
+                  </>
+                )}
+              </button>
+              {expandedSections['yahoo_full_json'] ? (
+                <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+              ) : (
+                <ChevronRightIcon className="h-4 w-4 text-gray-400" />
+              )}
+            </div>
+          </div>
+          
+          <AnimatePresence>
+            {expandedSections['yahoo_full_json'] && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="px-4 pb-4 bg-black">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-gray-400">Yahoo Finance 完整響應 ({Object.keys(rawData).length} 個主要字段)</span>
+                    <button
+                      onClick={() => copyJsonToClipboard(rawData, 'yahoo-json-expand')}
+                      className="text-xs text-blue-400 hover:text-blue-300 underline"
+                    >
+                      再次複製
+                    </button>
+                  </div>
+                  <pre className="text-xs text-green-400 whitespace-pre-wrap font-mono p-3 rounded border border-gray-700 bg-gray-900">
+                    {JSON.stringify(rawData, null, 2)}
+                  </pre>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function DataVerification({ data, rawApiResponse }: DataVerificationProps) {
   const [showRawData, setShowRawData] = useState(false)
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({})
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    // 默認展開Yahoo Finance的主要數據類別
+    'yahoo_basic': true,
+    'yahoo_financial': true,
+    'yahoo_valuation': true,
+    'yahoo_growth': true,
+    'yahoo_dividends': true,
+    'yahoo_technical': true
+  })
+  const [copySuccess, setCopySuccess] = useState<Record<string, boolean>>({})
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section]
     }))
+  }
+
+  const copyJsonToClipboard = async (jsonData: any, buttonId: string = 'default') => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(jsonData, null, 2))
+      setCopySuccess(prev => ({ ...prev, [buttonId]: true }))
+      setTimeout(() => setCopySuccess(prev => ({ ...prev, [buttonId]: false })), 2000)
+    } catch (err) {
+      console.error('複製失敗:', err)
+      // fallback 方法
+      const textArea = document.createElement('textarea')
+      textArea.value = JSON.stringify(jsonData, null, 2)
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      try {
+        document.execCommand('copy')
+        setCopySuccess(prev => ({ ...prev, [buttonId]: true }))
+        setTimeout(() => setCopySuccess(prev => ({ ...prev, [buttonId]: false })), 2000)
+      } catch (fallbackErr) {
+        console.error('Fallback 複製也失敗:', fallbackErr)
+      }
+      document.body.removeChild(textArea)
+    }
   }
 
   const isFullAnalysis = 'valuation_methods' in data
@@ -332,7 +851,7 @@ export function DataVerification({ data, rawApiResponse }: DataVerificationProps
                                         <div className="font-medium">預測未來現金流</div>
                                         <div className="text-green-600 text-xs mt-1">• 基準收入: ${((method as any).calculation_details?.projected_cash_flows?.base_revenue / 1e9)?.toFixed(1) || 'N/A'}B</div>
                                         {(method as any).calculation_details?.projected_cash_flows?.projections && (
-                                          <div className="bg-white p-2 rounded border mt-1 max-h-32 overflow-y-auto">
+                                          <div className="bg-white p-2 rounded border mt-1">
                                             <div className="text-green-600 text-xs font-semibold mb-1">年度現金流預測:</div>
                                             {(method as any).calculation_details.projected_cash_flows.projections.slice(0, 3).map((proj: any, idx: number) => (
                                               <div key={idx} className="text-green-600 text-xs">
@@ -543,7 +1062,7 @@ export function DataVerification({ data, rawApiResponse }: DataVerificationProps
             <div className="bg-gray-800 px-4 py-3 border-b border-gray-700">
               <h4 className="text-sm font-semibold text-white">API 原始響應數據</h4>
             </div>
-            <div className="p-4 max-h-96 overflow-y-auto">
+            <div className="p-4">
               {/* 結構化顯示原始數據 */}
               {rawApiResponse ? (
                 <div className="space-y-4">
@@ -575,102 +1094,96 @@ export function DataVerification({ data, rawApiResponse }: DataVerificationProps
                     </div>
                   </div>
                   
-                  {/* 原始Yahoo Finance API響應數據 */}
+                  {/* Yahoo Finance API 原始響應數據 - 現代化設計 */}
                   {(data as any).raw_api_data?.raw_yahoo_finance_response && (
-                    <div className="bg-gray-800 p-3 rounded border border-gray-600">
-                      <h5 className="text-yellow-400 font-semibold mb-2 text-sm">🔗 Yahoo Finance API 原始響應</h5>
-                      <div className="space-y-2 max-h-48 overflow-y-auto">
-                        <div className="border border-gray-600 rounded p-2">
-                          <div className="text-cyan-400 text-xs font-semibold">API 基本信息</div>
-                          <div className="text-gray-300 text-xs mt-1">
-                            <div>API Source: <span className="text-green-400">{(data as any).raw_api_data.raw_yahoo_finance_response.api_source}</span></div>
-                            <div>Fetch Time: <span className="text-blue-400">{(data as any).raw_api_data.raw_yahoo_finance_response.fetch_timestamp}</span></div>
-                          </div>
-                        </div>
-                        
-                        {(data as any).raw_api_data.raw_yahoo_finance_response.yahoo_finance_info && (
-                          <div className="border border-gray-600 rounded p-2">
-                            <div className="text-cyan-400 text-xs font-semibold">Yahoo Finance Info 原始數據 (部分欄位)</div>
-                            <div className="text-gray-300 text-xs mt-1 font-mono max-h-32 overflow-y-auto">
-                              {Object.entries((data as any).raw_api_data.raw_yahoo_finance_response.yahoo_finance_info)
-                                .filter(([key]) => ['currentPrice', 'marketCap', 'totalRevenue', 'netIncomeToCommon', 'trailingPE', 'enterpriseToEbitda', 'totalAssets', 'totalDebt', 'freeCashflow', 'longName', 'sector', 'industry'].includes(key))
-                                .slice(0, 15)
-                                .map(([key, value]) => (
-                                <div key={key} className="text-xs">
-                                  <span className="text-yellow-400">{key}:</span> <span className="text-white">{typeof value === 'number' ? value.toLocaleString() : JSON.stringify(value)}</span>
-                                </div>
-                              ))}
-                              <div className="text-gray-500 text-xs mt-1">
-                                ... 更多欄位請查看完整 JSON ({Object.keys((data as any).raw_api_data.raw_yahoo_finance_response.yahoo_finance_info).length} 個欄位)
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {(data as any).raw_api_data.raw_yahoo_finance_response.yahoo_finance_history && 
-                         (data as any).raw_api_data.raw_yahoo_finance_response.yahoo_finance_history.length > 0 && (
-                          <div className="border border-gray-600 rounded p-2">
-                            <div className="text-cyan-400 text-xs font-semibold">Yahoo Finance 歷史價格數據 (最近3天)</div>
-                            <div className="text-gray-300 text-xs mt-1 font-mono max-h-24 overflow-y-auto">
-                              {(data as any).raw_api_data.raw_yahoo_finance_response.yahoo_finance_history.slice(-3).map((day: any, idx: number) => (
-                                <div key={idx} className="text-xs">
-                                  {day.Date && (
-                                    <span className="text-yellow-400">{new Date(day.Date).toLocaleDateString()}:</span>
-                                  )}
-                                  <span className="text-white"> Open=${day.Open?.toFixed(2)} High=${day.High?.toFixed(2)} Low=${day.Low?.toFixed(2)} Close=${day.Close?.toFixed(2)}</span>
-                                </div>
-                              ))}
-                              <div className="text-gray-500 text-xs mt-1">
-                                總計 {(data as any).raw_api_data.raw_yahoo_finance_response.yahoo_finance_history.length} 天歷史數據
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <YahooFinanceDataCard 
+                      rawData={(data as any).raw_api_data.raw_yahoo_finance_response}
+                      expandedSections={expandedSections}
+                      toggleSection={toggleSection}
+                      copyJsonToClipboard={copyJsonToClipboard}
+                      copySuccess={copySuccess}
+                    />
                   )}
 
-                  {/* 顯示每個估值方法的原始數據 */}
+                  {/* 估值方法原始數據 - 現代化設計 */}
                   {isFullAnalysis && (data as AnalysisResponse).valuation_methods && (
-                    <div className="bg-gray-800 p-3 rounded border border-gray-600">
-                      <h5 className="text-yellow-400 font-semibold mb-2 text-sm">🧮 Valuation Methods Raw Data</h5>
-                      <div className="space-y-2 max-h-40 overflow-y-auto">
-                        {(data as AnalysisResponse).valuation_methods.map((method, idx) => (
-                          <div key={idx} className="border border-gray-600 rounded p-2">
-                            <div className="text-cyan-400 text-xs font-semibold">{method.display_name}</div>
-                            <div className="text-gray-300 text-xs mt-1">
-                              <div>Target Price: <span className="text-green-400">${method.target_price.toFixed(2)}</span></div>
-                              <div>Confidence: <span className="text-blue-400">{(method.confidence_level * 100).toFixed(0)}%</span></div>
-                              {(method as any).raw_data_sources && (
-                                <div className="mt-1">
-                                  <div className="text-yellow-400 text-xs">Data Sources:</div>
-                                  {(method as any).raw_data_sources.data_sources?.map((source: string, i: number) => (
-                                    <div key={i} className="text-gray-400 text-xs">• {source}</div>
-                                  ))}
-                                  {(method as any).raw_data_sources.calculation_engine && (
-                                    <div className="text-gray-400 text-xs">• Engine: {(method as any).raw_data_sources.calculation_engine}</div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <ValuationMethodsDataCard 
+                      methods={(data as AnalysisResponse).valuation_methods}
+                      expandedSections={expandedSections}
+                      toggleSection={toggleSection}
+                    />
                   )}
                 </div>
               ) : null}
               
               {/* 完整JSON數據 */}
-              <div className="mt-4">
-                <details className="group">
-                  <summary className="cursor-pointer text-yellow-400 hover:text-yellow-300 text-sm font-semibold mb-2">
-                    🔍 Show Full JSON Response
-                  </summary>
-                  <pre className="text-xs text-green-400 whitespace-pre-wrap font-mono bg-black p-3 rounded border border-gray-700 mt-2">
-                    {JSON.stringify(rawApiResponse || data, null, 2)}
-                  </pre>
-                </details>
+              <div className="bg-gray-800 rounded-lg border border-gray-600 overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-700 transition-colors">
+                  <button
+                    onClick={() => toggleSection('complete_json')}
+                    className="flex items-center flex-1 text-left"
+                  >
+                    <span className="text-xl mr-2">🔍</span>
+                    <div>
+                      <div className="text-white font-medium text-sm">完整 API 響應 JSON</div>
+                      <div className="text-gray-400 text-xs">開發者模式 - 查看所有原始數據</div>
+                    </div>
+                  </button>
+                  <div className="flex items-center space-x-2 ml-4">
+                    <button
+                      onClick={() => copyJsonToClipboard(rawApiResponse || data, 'complete-api')}
+                      className={`px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center space-x-1 ${
+                        copySuccess['complete-api'] 
+                          ? 'bg-green-600 text-white' 
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      {copySuccess['complete-api'] ? (
+                        <>
+                          <span className="text-xs">✓</span>
+                          <span>已複製</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-xs">📋</span>
+                          <span>複製JSON</span>
+                        </>
+                      )}
+                    </button>
+                    {expandedSections['complete_json'] ? (
+                      <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <ChevronRightIcon className="h-4 w-4 text-gray-400" />
+                    )}
+                  </div>
+                </div>
+                
+                <AnimatePresence>
+                  {expandedSections['complete_json'] && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-4 pb-4 bg-black">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-xs text-gray-400">JSON內容 ({Object.keys(rawApiResponse || data).length} 個主要字段)</span>
+                          <button
+                            onClick={() => copyJsonToClipboard(rawApiResponse || data, 'complete-api-expand')}
+                            className="text-xs text-blue-400 hover:text-blue-300 underline"
+                          >
+                            再次複製
+                          </button>
+                        </div>
+                        <pre className="text-xs text-green-400 whitespace-pre-wrap font-mono p-3 rounded border border-gray-700 bg-gray-900">
+                          {JSON.stringify(rawApiResponse || data, null, 2)}
+                        </pre>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </motion.div>

@@ -1,5 +1,5 @@
 def main():
-    print("Hello from ibank!")
+    print("Hello from CapitalCore!")
 
 
 if __name__ == "__main__":

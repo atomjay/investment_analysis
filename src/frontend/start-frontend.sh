@@ -3,7 +3,7 @@
 # Start the Next.js frontend server with proper network binding
 # This script ensures the frontend is accessible from all network interfaces
 
-echo "🚀 Starting iBank Frontend Server..."
+echo "🚀 Starting CapitalCore Frontend Server..."
 
 # Check if port 3000 is already in use
 if lsof -i :3000 >/dev/null 2>&1; then

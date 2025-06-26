@@ -391,7 +391,7 @@ class AnalysisEngine:
                         ],
                         "data_source": "Yahoo Finance API",
                         "fetch_timestamp": datetime.now().isoformat(),
-                        "raw_yahoo_finance_response": self.data_fetcher.get_raw_api_response() if hasattr(self.data_fetcher, 'get_raw_api_response') else {}
+                        "raw_yahoo_finance_response": stock_data.raw_api_data if stock_data.raw_api_data else {}
                     }
                 }
             else:

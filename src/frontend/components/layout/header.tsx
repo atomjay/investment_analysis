@@ -11,7 +11,7 @@ export function Header() {
           <div className="flex items-center">
             <ChartBarIcon className="h-8 w-8 text-primary-600" />
             <span className="ml-2 text-xl font-bold text-gray-900">
-              iBank
+              CapitalCore
             </span>
           </div>
         </div>
