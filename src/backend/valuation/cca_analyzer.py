@@ -87,27 +87,65 @@ class CCAAnalyzer:
             }
         }
         
-        # 填充加權計算詳情
-        total_weight = 0.0
-        weighted_sum = 0.0
-        weights = {"pe_based": 0.5, "ev_ebitda_based": 0.3, "pb_based": 0.2}
+        # 填充加權計算詳情 - 使用與_calculate_weighted_target_price相同的邏輯
+        default_weights = {"pe_based": 0.5, "ev_ebitda_based": 0.3, "pb_based": 0.2}
         
+        # 獲取適用的權重
+        applicable_weights = {}
         for method, price in target_prices.items():
-            if method in weights and price > 0:
-                weight = weights[method]
+            if method in default_weights and price > 0:
+                applicable_weights[method] = default_weights[method]
+        
+        # 標準化權重確保總和為100%
+        if applicable_weights:
+            total_default_weight = sum(applicable_weights.values())
+            normalized_weights = {method: weight / total_default_weight 
+                                for method, weight in applicable_weights.items()}
+        else:
+            normalized_weights = {method: 1.0 / len([p for p in target_prices.values() if p > 0]) 
+                                for method in target_prices.keys() if target_prices[method] > 0}
+        
+        # 填充計算詳情
+        final_weighted_sum = 0.0
+        for method, price in target_prices.items():
+            if method in normalized_weights and price > 0:
+                weight = normalized_weights[method]
                 contribution = price * weight
-                weighted_sum += contribution
-                total_weight += weight
+                final_weighted_sum += contribution
+                
+                # 計算EV/EBITDA的詳細步驟記錄
+                if method == "ev_ebitda_based" and target_stock.revenue:
+                    estimated_ebitda = target_stock.revenue * 0.2
+                    ev_multiple = peer_multiples.get("ev_ebitda_median", 0)
+                    implied_ev = estimated_ebitda * ev_multiple
+                    net_debt = (target_stock.total_debt or 0) - 0
+                    implied_equity = implied_ev - net_debt
+                    shares_outstanding = target_stock.market_cap / target_stock.price
+                    
+                    ev_calculation_steps = {
+                        "estimated_ebitda": estimated_ebitda,
+                        "ev_ebitda_multiple": ev_multiple,
+                        "implied_enterprise_value": implied_ev,
+                        "net_debt": net_debt,
+                        "implied_equity_value": implied_equity,
+                        "shares_outstanding": shares_outstanding,
+                        "price_per_share": price
+                    }
+                else:
+                    ev_calculation_steps = None
                 
                 calculation_details["valuation_calculations"]["weighted_calculation"].append({
                     "method": method,
                     "target_price": price,
-                    "weight": weight,
+                    "normalized_weight": weight,
+                    "original_weight": default_weights.get(method, 1.0 / len(target_prices)),
                     "contribution": contribution,
-                    "multiple_used": peer_multiples.get(method.replace("_based", "_median"), "N/A")
+                    "multiple_used": peer_multiples.get(method.replace("_based", "_median"), "N/A"),
+                    "ev_calculation_details": ev_calculation_steps
                 })
         
-        calculation_details["valuation_calculations"]["final_weighted_price"] = weighted_sum / total_weight if total_weight > 0 else 0
+        calculation_details["valuation_calculations"]["final_weighted_price"] = final_weighted_sum
+        calculation_details["valuation_calculations"]["total_normalized_weight"] = sum(normalized_weights.values())
 
         return ValuationResult(
             method=ValuationMethod.CCA,
@@ -194,14 +232,21 @@ class CCAAnalyzer:
             eps = target_stock.net_income / (target_stock.market_cap / target_stock.price)
             target_prices["pe_based"] = eps * peer_multiples["pe_median"]
         
-        # 基於EV/EBITDA倍數的目標價格（需要更複雜計算）
-        if "ev_ebitda_median" in peer_multiples:
-            # 簡化計算，實際應用中需要更精確的EBITDA和企業價值計算
-            estimated_ebitda = target_stock.revenue * 0.2 if target_stock.revenue else None
-            if estimated_ebitda:
-                estimated_ev = estimated_ebitda * peer_multiples["ev_ebitda_median"]
-                # 簡化：假設企業價值等於市值（忽略淨債務）
-                target_prices["ev_ebitda_based"] = (estimated_ev / target_stock.market_cap) * target_stock.price
+        # 基於EV/EBITDA倍數的目標價格
+        if "ev_ebitda_median" in peer_multiples and target_stock.revenue:
+            # 步驟1: 估算EBITDA (使用20%的EBITDA Margin作為行業平均)
+            estimated_ebitda = target_stock.revenue * 0.2
+            
+            # 步驟2: 計算隱含企業價值 (EV = EBITDA × EV/EBITDA倍數)
+            implied_enterprise_value = estimated_ebitda * peer_multiples["ev_ebitda_median"]
+            
+            # 步驟3: 轉換為股權價值 (Equity Value = EV - Net Debt)
+            net_debt = (target_stock.total_debt or 0) - 0  # 假設無現金，簡化計算
+            implied_equity_value = implied_enterprise_value - net_debt
+            
+            # 步驟4: 計算每股價格 (Price per Share = Equity Value / Shares Outstanding)
+            shares_outstanding = target_stock.market_cap / target_stock.price
+            target_prices["ev_ebitda_based"] = implied_equity_value / shares_outstanding
         
         # 基於P/B倍數的目標價格
         if "pb_median" in peer_multiples and target_stock.total_assets:
@@ -217,22 +262,36 @@ class CCAAnalyzer:
         if not target_prices:
             return 0.0
         
-        # 設定權重：P/E倍數權重最高
-        weights = {
+        # 預設權重：P/E倍數權重最高
+        default_weights = {
             "pe_based": 0.5,
             "ev_ebitda_based": 0.3,
             "pb_based": 0.2
         }
         
-        weighted_sum = 0.0
-        total_weight = 0.0
-        
+        # 只使用有效的估值方法權重
+        applicable_weights = {}
         for method, price in target_prices.items():
-            if method in weights and price > 0:
-                weighted_sum += price * weights[method]
-                total_weight += weights[method]
+            if method in default_weights and price > 0:
+                applicable_weights[method] = default_weights[method]
         
-        return weighted_sum / total_weight if total_weight > 0 else statistics.mean(target_prices.values())
+        # 重新標準化權重，確保總和為100%
+        if applicable_weights:
+            total_default_weight = sum(applicable_weights.values())
+            normalized_weights = {method: weight / total_default_weight 
+                                for method, weight in applicable_weights.items()}
+        else:
+            # 如果沒有預設權重的方法，平均分配權重
+            normalized_weights = {method: 1.0 / len(target_prices) 
+                                for method in target_prices.keys() if target_prices[method] > 0}
+        
+        # 計算加權平均
+        weighted_sum = 0.0
+        for method, price in target_prices.items():
+            if method in normalized_weights and price > 0:
+                weighted_sum += price * normalized_weights[method]
+        
+        return weighted_sum if normalized_weights else statistics.mean([p for p in target_prices.values() if p > 0])
     
     def _assess_confidence_level(self, target_stock: StockData, comparables: List[CompanyComparable], 
                                peer_multiples: Dict[str, float]) -> float:
