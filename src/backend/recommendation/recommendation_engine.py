@@ -89,18 +89,30 @@ class RecommendationEngine:
             weighted_sum = 0.0
             total_weight = 0.0
             
+            # 第一步：計算所有方法的未標準化權重
+            raw_weights = {}
             for result in valuation_results:
-                # 結合信心水平和方法適用性
+                # 結合信心水平和方法適用性係數
                 base_confidence = result.confidence_level
-                suitability_weight = adjusted_weights.get(result.method.value, 1.0)
+                suitability_coefficient = adjusted_weights.get(result.method.value, 1.0)
                 
-                # 最終權重 = 信心水平 × 方法適用性權重
-                final_weight = base_confidence * suitability_weight
-                
-                weighted_sum += result.target_price * final_weight
-                total_weight += final_weight
+                # 未標準化權重 = 信心水平 × 行業適用性係數
+                raw_weight = base_confidence * suitability_coefficient
+                raw_weights[result.method.value] = raw_weight
+                total_weight += raw_weight
             
-            return weighted_sum / total_weight if total_weight > 0 else statistics.mean(
+            # 第二步：標準化權重（使總和為1）
+            normalized_weights = {}
+            if total_weight > 0:
+                for method_name, raw_weight in raw_weights.items():
+                    normalized_weights[method_name] = raw_weight / total_weight
+            
+            # 第三步：使用標準化權重計算加權平均目標價
+            for result in valuation_results:
+                normalized_weight = normalized_weights.get(result.method.value, 0)
+                weighted_sum += result.target_price * normalized_weight
+            
+            return weighted_sum if total_weight > 0 else statistics.mean(
                 [r.target_price for r in valuation_results]
             )
         

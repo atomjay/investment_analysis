@@ -459,7 +459,42 @@ export function AnalysisResult({ data, type }: AnalysisResultProps) {
                   })}
                 </div>
                 <div className="mt-3 pt-2 border-t border-blue-200 text-xs text-blue-700">
-                  <strong>權重計算：</strong>最終權重 = 信心度 × 方法適用性權重 × 標準化調整
+                  <strong>權重計算過程：</strong>
+                  <div className="mt-1 space-y-1">
+                    <div>1. 未標準化權重 = 信心度 × 行業適用性係數</div>
+                    <div>2. 標準化權重 = 未標準化權重 ÷ 總權重 (確保總和=100%)</div>
+                    <div>3. 最終目標價 = Σ(各方法價格 × 標準化權重)</div>
+                  </div>
+                </div>
+                
+                {/* Weight Calculation Example */}
+                <div className="mt-3 p-2 bg-blue-25 rounded border border-blue-100">
+                  <div className="text-xs text-blue-800 font-medium mb-2">
+                    📋 實際權重計算範例 (假設Technology行業):
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-blue-700">
+                    <div>
+                      <div className="font-medium">Step 1: 係數 × 信心度</div>
+                      <div>DCF: 1.3 × 80% = 1.04</div>
+                      <div>CCA: 1.2 × 88% = 1.06</div>
+                      <div>PTA: 0.8 × 65% = 0.52</div>
+                      <div className="border-t border-blue-200 mt-1 pt-1">
+                        <strong>總和: 2.62</strong>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-medium">Step 2: 標準化權重</div>
+                      <div>DCF: 1.04÷2.62 = 39.7%</div>
+                      <div>CCA: 1.06÷2.62 = 40.5%</div>
+                      <div>PTA: 0.52÷2.62 = 19.8%</div>
+                      <div className="border-t border-blue-200 mt-1 pt-1">
+                        <strong>總計: 100.0%</strong>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 text-xs text-blue-600">
+                    💡 這確保了各方法權重合理分配且總和為1
+                  </div>
                 </div>
               </div>
             </div>
