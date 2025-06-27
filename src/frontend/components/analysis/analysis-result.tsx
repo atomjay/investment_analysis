@@ -188,47 +188,7 @@ export function AnalysisResult({ data, type }: AnalysisResultProps) {
                   isMegaCap: (('raw_api_data' in data && data.raw_api_data && 'stock_data' in data.raw_api_data && (data.raw_api_data as any).stock_data?.market_cap) || 0) > 200e9
                 }
                 
-                // 計算所有方法的未標準化權重
-                const allMethodWeights = data.valuation_methods.map(m => {
-                  const getSectorSpecificWeights = (sector: string, method: string, isLargeCap: boolean, isMegaCap: boolean) => {
-                    // 簡化版本的行業權重查找
-                    const sectorConfigs: Record<string, Record<string, number>> = {
-                      'Technology': {
-                        'discounted_cash_flow': isLargeCap ? 1.3 : 1.0,
-                        'comparable_companies_analysis': 1.2,
-                        'precedent_transactions_analysis': isMegaCap ? 0.8 : 1.1,
-                        'asset_based_valuation': 0.3
-                      },
-                      'Financial Services': {
-                        'discounted_cash_flow': 0.8,
-                        'comparable_companies_analysis': 1.4,
-                        'precedent_transactions_analysis': 1.2,
-                        'asset_based_valuation': 1.1
-                      },
-                      'Healthcare': {
-                        'discounted_cash_flow': 1.4,
-                        'comparable_companies_analysis': 1.1,
-                        'precedent_transactions_analysis': 1.0,
-                        'asset_based_valuation': 0.7
-                      },
-                      'Utilities': {
-                        'discounted_cash_flow': 1.6,
-                        'comparable_companies_analysis': 1.0,
-                        'precedent_transactions_analysis': 0.8,
-                        'asset_based_valuation': 1.2
-                      }
-                    }
-                    return sectorConfigs[sector]?.[method] || 1.0
-                  }
-                  
-                  const coefficient = getSectorSpecificWeights(companyProfile.sector, m.method, companyProfile.isLargeCap, companyProfile.isMegaCap)
-                  return m.confidence_level * coefficient
-                })
-                
-                const totalRawWeight = allMethodWeights.reduce((sum, w) => sum + w, 0)
-                const currentMethodRawWeight = method.confidence_level * getSectorSpecificWeights(companyProfile.sector, method.method, companyProfile.isLargeCap, companyProfile.isMegaCap)
-                const actualWeight = (currentMethodRawWeight / totalRawWeight) * 100
-                
+                // 定義行業權重函數（所有計算都會用到）
                 const getSectorSpecificWeights = (sector: string, method: string, isLargeCap: boolean, isMegaCap: boolean) => {
                   const sectorConfigs: Record<string, Record<string, number>> = {
                     'Technology': {
@@ -258,6 +218,17 @@ export function AnalysisResult({ data, type }: AnalysisResultProps) {
                   }
                   return sectorConfigs[sector]?.[method] || 1.0
                 }
+                
+                // 計算所有方法的未標準化權重
+                const allMethodWeights = data.valuation_methods.map(m => {
+                  
+                  const coefficient = getSectorSpecificWeights(companyProfile.sector, m.method, companyProfile.isLargeCap, companyProfile.isMegaCap)
+                  return m.confidence_level * coefficient
+                })
+                
+                const totalRawWeight = allMethodWeights.reduce((sum, w) => sum + w, 0)
+                const currentMethodRawWeight = method.confidence_level * getSectorSpecificWeights(companyProfile.sector, method.method, companyProfile.isLargeCap, companyProfile.isMegaCap)
+                const actualWeight = (currentMethodRawWeight / totalRawWeight) * 100
                 
                 const getMethodShortName = (methodName: string) => {
                   const mapping: Record<string, string> = {
@@ -545,22 +516,48 @@ export function AnalysisResult({ data, type }: AnalysisResultProps) {
                 {/* Real-time Weight Calculation */}
                 <div className="mt-3 p-2 bg-blue-25 rounded border border-blue-100">
                   <div className="text-xs text-blue-800 font-medium mb-2">
-                    📋 實際權重計算過程 ({companyProfile.sector}行業):
+                    📋 實際權重計算過程 ({(('raw_api_data' in data && data.raw_api_data && 'stock_data' in data.raw_api_data && (data.raw_api_data as any).stock_data?.sector) || 'Technology')}行業):
                   </div>
                   
                   {(() => {
+                    // 重新定義company profile for this scope
+                    const currentCompanyProfile = {
+                      sector: ('raw_api_data' in data && data.raw_api_data && 'stock_data' in data.raw_api_data && (data.raw_api_data as any).stock_data?.sector) || 'Technology',
+                      market_cap: ('raw_api_data' in data && data.raw_api_data && 'stock_data' in data.raw_api_data && (data.raw_api_data as any).stock_data?.market_cap) || 0,
+                      isLargeCap: (('raw_api_data' in data && data.raw_api_data && 'stock_data' in data.raw_api_data && (data.raw_api_data as any).stock_data?.market_cap) || 0) > 10e9,
+                      isMegaCap: (('raw_api_data' in data && data.raw_api_data && 'stock_data' in data.raw_api_data && (data.raw_api_data as any).stock_data?.market_cap) || 0) > 200e9
+                    }
+                    
+                    // 重新定義sector weights function for this scope
+                    const localGetSectorSpecificWeights = (sector: string, method: string, isLargeCap: boolean, isMegaCap: boolean) => {
+                      const sectorConfigs: Record<string, Record<string, number>> = {
+                        'Technology': {
+                          'discounted_cash_flow': isLargeCap ? 1.3 : 1.0,
+                          'comparable_companies_analysis': 1.2,
+                          'precedent_transactions_analysis': isMegaCap ? 0.8 : 1.1,
+                          'asset_based_valuation': 0.3
+                        },
+                        'Financial Services': {
+                          'discounted_cash_flow': 0.8,
+                          'comparable_companies_analysis': 1.4,
+                          'precedent_transactions_analysis': 1.2,
+                          'asset_based_valuation': 1.1
+                        }
+                      }
+                      return sectorConfigs[sector]?.[method] || 1.0
+                    }
+                    
                     // 計算實際的權重分配
                     const methodCalcs = data.valuation_methods.map(method => {
-                      const sectorWeight = getSectorSpecificWeights(
-                        companyProfile.sector, 
+                      const sectorWeight = localGetSectorSpecificWeights(
+                        currentCompanyProfile.sector, 
                         method.method, 
-                        companyProfile.isLargeCap, 
-                        companyProfile.isMegaCap
+                        currentCompanyProfile.isLargeCap, 
+                        currentCompanyProfile.isMegaCap
                       )
                       
-                      // 提取數值權重係數
-                      const coefficientMatch = sectorWeight.weight.match(/\(([\d.]+)x\)/)
-                      const coefficient = coefficientMatch ? parseFloat(coefficientMatch[1]) : 1.0
+                      // sectorWeight 本身就是係數值
+                      const coefficient = sectorWeight
                       
                       // 未標準化權重 = 信心度 × 行業係數
                       const rawWeight = method.confidence_level * coefficient
