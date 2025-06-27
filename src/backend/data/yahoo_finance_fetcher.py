@@ -74,14 +74,20 @@ class YahooFinanceDataFetcher:
                 'marketCap': info.get('marketCap'),
                 'totalRevenue': info.get('totalRevenue'),
                 'netIncomeToCommon': info.get('netIncomeToCommon'),
-                'totalAssets': info.get('totalAssets'),
+                'totalAssets': info.get('totalAssets') or info.get('totalStockholderEquity'),  # 備用股東權益
+                'bookValue': info.get('bookValue'),  # 每股淨值
                 'totalDebt': info.get('totalDebt'),
                 'totalCash': info.get('totalCash'),
                 'freeCashflow': info.get('freeCashflow'),
+                'ebitda': info.get('ebitda'),  # EBITDA數據
                 'trailingPE': info.get('trailingPE'),
                 'enterpriseToEbitda': info.get('enterpriseToEbitda'),
                 'priceToBook': info.get('priceToBook'),
-                'priceToSalesTrailing12Months': info.get('priceToSalesTrailing12Months')
+                'priceToSalesTrailing12Months': info.get('priceToSalesTrailing12Months'),
+                # WACC計算相關數據
+                'beta': info.get('beta'),  # Beta係數
+                'trailingEps': info.get('trailingEps'),  # 尾隨EPS
+                'sharesOutstanding': info.get('sharesOutstanding')  # 流通股數
             }
             
             # 使用數據標準化器
@@ -109,6 +115,11 @@ class YahooFinanceDataFetcher:
                 total_debt=normalized_data.get('total_debt'),
                 total_cash=normalized_data.get('total_cash'),
                 free_cash_flow=normalized_data.get('free_cash_flow'),
+                ebitda=normalized_data.get('ebitda'),
+                book_value_per_share=normalized_data.get('book_value_per_share'),
+                eps=normalized_data.get('eps'),  # 新增：使用trailing EPS
+                shares_outstanding=normalized_data.get('shares_outstanding'),  # 新增：流通股數
+                beta=normalized_data.get('beta'),  # 新增：Beta係數
                 raw_api_data=current_raw_response  # 附加原始API數據
             )
             

@@ -446,8 +446,8 @@ class CCAAnalyzer:
         # 基於目標公司與可比公司的規模匹配度
         market_cap_score = 0
         if target_stock.market_cap and comparables:
-            comparable_market_caps = [comp.metrics.market_cap for comp in comparables 
-                                    if comp.metrics.market_cap]
+            comparable_market_caps = [comp.market_cap for comp in comparables 
+                                    if comp.market_cap]
             if comparable_market_caps:
                 avg_comparable_cap = statistics.mean(comparable_market_caps)
                 size_ratio = min(target_stock.market_cap / avg_comparable_cap, 

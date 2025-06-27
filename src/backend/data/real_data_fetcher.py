@@ -24,9 +24,15 @@ logger = logging.getLogger(__name__)
 class RealStockDataFetcher:
     """真實股票數據獲取器 - 整合多個數據源"""
     
-    def __init__(self, alpha_vantage_key: Optional[str] = None, fmp_key: Optional[str] = None):
+    def __init__(self, alpha_vantage_key: Optional[str] = None, fmp_key: Optional[str] = None, 
+                 use_backup: bool = False, backup_dir: str = "data_backup"):
         self.alpha_vantage_key = alpha_vantage_key or os.getenv('ALPHA_VANTAGE_API_KEY')
         self.fmp_key = fmp_key or os.getenv('FMP_API_KEY')
+        self.use_backup = use_backup or os.getenv('USE_DATA_BACKUP', '').lower() == 'true'
+        self.backup_dir = backup_dir
+        
+        # 確保備份目錄存在
+        os.makedirs(self.backup_dir, exist_ok=True)
         
         self.session = requests.Session()
         self.session.timeout = API_TIMEOUT
@@ -42,11 +48,14 @@ class RealStockDataFetcher:
         logger.info(f"初始化真實數據獲取器")
         logger.info(f"Alpha Vantage Key: {'已配置' if self.alpha_vantage_key else '未配置'}")
         logger.info(f"FMP Key: {'已配置' if self.fmp_key else '未配置'}")
+        logger.info(f"備份模式: {'啟用' if self.use_backup else '禁用'}")
+        logger.info(f"備份目錄: {self.backup_dir}")
         logger.info(f"數據標準化器: 已啟用")
     
     def fetch_stock_data(self, symbol: str) -> Optional[StockData]:
         """
         獲取股票基本數據 - 整合多個數據源
+        支持備份模式：從備份文件讀取或保存到備份文件
         
         Args:
             symbol: 股票代號
@@ -55,13 +64,26 @@ class RealStockDataFetcher:
             StockData: 整合後的股票數據
         """
         try:
-            logger.info(f"開始獲取 {symbol} 的真實數據")
+            logger.info(f"開始獲取 {symbol} 的真實數據 (備份模式: {self.use_backup})")
             
-            # 優先使用 Alpha Vantage 獲取基本信息
+            # 檢查是否使用備份模式
+            if self.use_backup:
+                backup_data = self._load_from_backup(symbol)
+                if backup_data:
+                    logger.info(f"從備份載入 {symbol} 數據")
+                    return self._merge_stock_data(symbol, 
+                                                backup_data.get('alpha_vantage'), 
+                                                backup_data.get('fmp'))
+                else:
+                    logger.warning(f"備份模式啟用但找不到 {symbol} 的備份數據")
+            
+            # 從API獲取實時數據
             alpha_data = self._fetch_from_alpha_vantage(symbol)
-            
-            # 使用 FMP 獲取詳細財務數據
             fmp_data = self._fetch_from_fmp(symbol)
+            
+            # 保存到備份（如果成功獲取到數據）
+            if alpha_data or fmp_data:
+                self._save_to_backup(symbol, alpha_data, fmp_data)
             
             # 合併數據
             stock_data = self._merge_stock_data(symbol, alpha_data, fmp_data)
@@ -282,6 +304,20 @@ class RealStockDataFetcher:
             if completeness_score < 0.5:
                 logger.warning(f"{symbol} 數據完整性較低 ({completeness_score:.2f})")
             
+            # 準備原始API數據
+            raw_api_data = {
+                "data_sources": [],
+                "alpha_vantage_response": alpha_data,
+                "fmp_response": fmp_data,
+                "fetch_timestamp": datetime.now().isoformat(),
+                "merged_data_fields": list(merged_data.keys())
+            }
+            
+            if alpha_data:
+                raw_api_data["data_sources"].append("Alpha Vantage")
+            if fmp_data:
+                raw_api_data["data_sources"].append("FMP")
+            
             # 創建 StockData 對象（使用完整的標準化數據）
             stock_data = StockData(
                 # 基本信息
@@ -296,6 +332,7 @@ class RealStockDataFetcher:
                 net_income=merged_data.get('net_income'),
                 total_assets=merged_data.get('total_assets'),
                 total_debt=merged_data.get('total_debt'),
+                total_cash=merged_data.get('total_cash'),
                 free_cash_flow=merged_data.get('free_cash_flow'),
                 operating_cash_flow=merged_data.get('operating_cash_flow'),
                 total_equity=merged_data.get('total_equity'),
@@ -339,7 +376,13 @@ class RealStockDataFetcher:
                 eps=merged_data.get('eps'),
                 book_value_per_share=merged_data.get('book_value_per_share'),
                 dividend_per_share=merged_data.get('dividend_per_share'),
-                shares_outstanding=merged_data.get('shares_outstanding')
+                shares_outstanding=merged_data.get('shares_outstanding'),
+                
+                # WACC計算相關
+                beta=merged_data.get('beta'),
+                
+                # 原始API數據
+                raw_api_data=raw_api_data
             )
             
             # 記錄數據來源信息
@@ -522,3 +565,91 @@ class RealStockDataFetcher:
                 "status": "未知",
                 "error": str(e)
             }
+    
+    def _save_to_backup(self, symbol: str, alpha_data: Optional[Dict], fmp_data: Optional[Dict]):
+        """保存API響應數據到備份文件"""
+        try:
+            backup_data = {
+                "symbol": symbol.upper(),
+                "timestamp": datetime.now().isoformat(),
+                "alpha_vantage": alpha_data,
+                "fmp": fmp_data,
+                "metadata": {
+                    "alpha_vantage_available": alpha_data is not None,
+                    "fmp_available": fmp_data is not None,
+                    "backup_version": "1.0"
+                }
+            }
+            
+            backup_file = os.path.join(self.backup_dir, f"{symbol.upper()}_backup.json")
+            
+            with open(backup_file, 'w', encoding='utf-8') as f:
+                json.dump(backup_data, f, indent=2, ensure_ascii=False, default=str)
+            
+            logger.info(f"已保存 {symbol} 數據到備份文件: {backup_file}")
+            
+        except Exception as e:
+            logger.error(f"保存 {symbol} 備份數據失敗: {e}")
+    
+    def _load_from_backup(self, symbol: str) -> Optional[Dict]:
+        """從備份文件載入數據"""
+        try:
+            backup_file = os.path.join(self.backup_dir, f"{symbol.upper()}_backup.json")
+            
+            if not os.path.exists(backup_file):
+                logger.info(f"備份文件不存在: {backup_file}")
+                return None
+            
+            with open(backup_file, 'r', encoding='utf-8') as f:
+                backup_data = json.load(f)
+            
+            # 檢查備份數據的有效性
+            if not backup_data.get('alpha_vantage') and not backup_data.get('fmp'):
+                logger.warning(f"備份文件 {backup_file} 不包含有效數據")
+                return None
+            
+            backup_time = backup_data.get('timestamp')
+            logger.info(f"從備份載入 {symbol} 數據 (備份時間: {backup_time})")
+            
+            return backup_data
+            
+        except Exception as e:
+            logger.error(f"載入 {symbol} 備份數據失敗: {e}")
+            return None
+    
+    def create_backup_for_symbol(self, symbol: str, force_refresh: bool = False):
+        """為特定股票創建備份數據（用於開發前準備）"""
+        try:
+            backup_file = os.path.join(self.backup_dir, f"{symbol.upper()}_backup.json")
+            
+            # 檢查是否已存在備份且不強制刷新
+            if os.path.exists(backup_file) and not force_refresh:
+                logger.info(f"{symbol} 備份已存在，跳過創建")
+                return True
+            
+            logger.info(f"正在為 {symbol} 創建備份數據...")
+            
+            # 暫時禁用備份模式以獲取實時數據
+            original_use_backup = self.use_backup
+            self.use_backup = False
+            
+            try:
+                # 獲取實時數據
+                alpha_data = self._fetch_from_alpha_vantage(symbol)
+                fmp_data = self._fetch_from_fmp(symbol)
+                
+                if alpha_data or fmp_data:
+                    self._save_to_backup(symbol, alpha_data, fmp_data)
+                    logger.info(f"✅ 成功創建 {symbol} 備份數據")
+                    return True
+                else:
+                    logger.error(f"❌ 無法獲取 {symbol} 的API數據")
+                    return False
+                    
+            finally:
+                # 恢復原始備份模式設置
+                self.use_backup = original_use_backup
+                
+        except Exception as e:
+            logger.error(f"創建 {symbol} 備份數據失敗: {e}")
+            return False

@@ -118,6 +118,9 @@ class DataNormalizer:
                 'BookValue': ('book_value_per_share', 'USD', 1),
                 'DividendPerShare': ('dividend_per_share', 'USD', 1),
                 'SharesOutstanding': ('shares_outstanding', 'shares', 1),
+                
+                # 風險指標
+                'Beta': ('beta', 'ratio', 1),  # 系統性風險係數
             },
             'fmp': {
                 # 基本財務數據
@@ -186,10 +189,17 @@ class DataNormalizer:
                 'totalDebt': ('total_debt', 'USD', 1),
                 'totalCash': ('total_cash', 'USD', 1),
                 'freeCashflow': ('free_cash_flow', 'USD', 1),
+                'ebitda': ('ebitda', 'USD', 1),
+                'bookValue': ('book_value_per_share', 'USD', 1),
                 'trailingPE': ('pe_ratio', 'ratio', 1),
                 'enterpriseToEbitda': ('ev_ebitda', 'ratio', 1),
                 'priceToBook': ('pb_ratio', 'ratio', 1),
                 'priceToSalesTrailing12Months': ('ps_ratio', 'ratio', 1),
+                # EPS數據 - 使用trailing EPS用於估值計算
+                'trailingEps': ('eps', 'USD', 1),
+                'sharesOutstanding': ('shares_outstanding', 'shares', 1),
+                # WACC計算相關數據（實際可獲得）
+                'beta': ('beta', 'ratio', 1),
             }
         }
         

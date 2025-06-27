@@ -83,6 +83,9 @@ class StockData:
     dividend_per_share: Optional[float] = None
     shares_outstanding: Optional[float] = None
     
+    # 風險指標
+    beta: Optional[float] = None  # 系統性風險係數
+    
     # 原始API數據 (用於數據驗證和調試)
     raw_api_data: Optional[Dict[str, any]] = None
 
@@ -130,6 +133,19 @@ class TransactionData:
     metrics_at_transaction: ValuationMetrics
 
 @dataclass
+class WaccComponents:
+    """WACC計算組件"""
+    risk_free_rate: float
+    market_risk_premium: float  
+    beta: float
+    cost_of_debt: float
+    tax_rate: float
+    weight_equity: float
+    weight_debt: float
+    debt_to_total_value: float
+    equity_to_total_value: float
+
+@dataclass
 class DCFAssumptions:
     """DCF假設參數"""
     revenue_growth_rates: List[float]  # 收入增長率預測
@@ -138,6 +154,7 @@ class DCFAssumptions:
     wacc: float  # 加權平均資本成本
     terminal_growth_rate: float  # 永續增長率
     projection_years: int = 5  # 預測年限
+    wacc_components: Optional[WaccComponents] = None  # WACC計算詳情
 
 @dataclass
 class RecommendationReason:

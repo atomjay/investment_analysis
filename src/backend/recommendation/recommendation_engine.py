@@ -468,19 +468,22 @@ class RecommendationEngine:
     
     def _determine_recommendation_type(self, potential_return: float, overall_score: float, 
                                      risk_level: str) -> RecommendationType:
-        """確定推薦類型"""
+        """
+        確定推薦類型 - 主要基於綜合評分，潛在回報作為輔助判斷
+        評分標準: 80+ 強烈買入 | 65+ 買入 | 35-65 持有 | 20-35 賣出 | 20- 強烈賣出
+        """
         
-        # 基於潛在回報和綜合評分的推薦邏輯
-        if overall_score >= 80 and potential_return >= 25:
+        # 主要基於綜合評分的推薦邏輯
+        if overall_score >= 80:
             return RecommendationType.STRONG_BUY
-        elif overall_score >= 65 and potential_return >= 15:
+        elif overall_score >= 65:
             return RecommendationType.BUY
-        elif overall_score <= 20 or potential_return <= -25:
-            return RecommendationType.STRONG_SELL
-        elif overall_score <= 35 or potential_return <= -15:
+        elif overall_score >= 35:
+            return RecommendationType.HOLD
+        elif overall_score >= 20:
             return RecommendationType.SELL
         else:
-            return RecommendationType.HOLD
+            return RecommendationType.STRONG_SELL
     
     def generate_analysis_report(self, stock_data: StockData, valuation_results: List[ValuationResult],
                                recommendation: InvestmentRecommendation) -> AnalysisReport:

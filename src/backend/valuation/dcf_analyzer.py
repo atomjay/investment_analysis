@@ -316,7 +316,9 @@ class DCFAnalyzer:
                 wacc=base_wacc + wacc_change,
                 terminal_growth_rate=assumptions.terminal_growth_rate,
                 revenue_growth_rates=assumptions.revenue_growth_rates,
-                fcf_margin=assumptions.fcf_margin
+                ebitda_margins=assumptions.ebitda_margins,
+                tax_rate=assumptions.tax_rate,
+                projection_years=assumptions.projection_years
             )
             # 簡化計算 - 使用線性近似
             wacc_impact = abs(wacc_change / base_wacc) if base_wacc > 0 else 0

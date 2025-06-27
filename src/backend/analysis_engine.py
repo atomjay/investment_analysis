@@ -513,8 +513,8 @@ class AnalysisEngine:
                                 "symbol": comp.symbol,
                                 "company_name": comp.company_name,
                                 "market_cap": comp.market_cap,
-                                "pe_ratio": comp.metrics.pe_ratio,
-                                "ev_ebitda": comp.metrics.ev_ebitda
+                                "pe_ratio": comp.metrics.pe_ratio if comp.metrics else None,
+                                "ev_ebitda": comp.metrics.ev_ebitda if comp.metrics else None
                             } for comp in comparable_companies
                         ],
                         "data_source": "Yahoo Finance API",
