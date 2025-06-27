@@ -48,9 +48,17 @@ def create_analysis_engine_with_source(data_source: str):
             engine.data_fetcher = YahooFinanceDataFetcher()
             return engine
         elif data_source == 'alpha_vantage':
+            from dotenv import load_dotenv
+            load_dotenv()
             alpha_key = os.getenv('ALPHA_VANTAGE_API_KEY')
+            fmp_key = os.getenv('FMP_API_KEY')
             engine = AnalysisEngine(use_real_data=False)
-            engine.data_fetcher = RealStockDataFetcher(alpha_key, None)
+            engine.data_fetcher = RealStockDataFetcher(
+                alpha_vantage_key=alpha_key, 
+                fmp_key=fmp_key,
+                use_backup=True,  # 使用備份模式避免API限制
+                backup_dir='data_backup'
+            )
             return engine
         elif data_source == 'fmp':
             fmp_key = os.getenv('FMP_API_KEY')
@@ -143,7 +151,7 @@ def analyze_stock():
         # 根據指定的數據源創建分析引擎
         temp_engine = create_analysis_engine_with_source(data_source)
         
-        if analysis_type == 'full':
+        if analysis_type in ['full', 'complete']:
             # 完整分析
             report = temp_engine.analyze_stock(symbol, include_sensitivity=True)
             if not report:
@@ -208,11 +216,16 @@ def analyze_stock():
                         'sector': report.stock_data.sector,
                         'total_assets': report.stock_data.total_assets,
                         'total_debt': report.stock_data.total_debt,
-                        'free_cash_flow': report.stock_data.free_cash_flow
+                        'free_cash_flow': report.stock_data.free_cash_flow,
+                        'beta': report.stock_data.beta,
+                        'ebitda': report.stock_data.ebitda,
+                        'total_cash': report.stock_data.total_cash
                     },
                     'data_source': data_source,
                     'fetch_timestamp': datetime.now().isoformat(),
-                    'raw_yahoo_finance_response': report.stock_data.raw_api_data if report.stock_data.raw_api_data else {}
+                    'raw_api_response': report.stock_data.raw_api_data if report.stock_data.raw_api_data else {},
+                    # 為了向後兼容保留Yahoo Finance的key
+                    'raw_yahoo_finance_response': report.stock_data.raw_api_data if data_source == 'yahoo_finance' and report.stock_data.raw_api_data else {}
                 }
             }
         else:
