@@ -106,11 +106,6 @@ export function AnalysisResult({ data, type }: AnalysisResultProps) {
             }`}>
               {data.recommendation.display_name}
             </div>
-            {'overall_score' in data.recommendation && data.recommendation.overall_score && (
-              <div className="mt-2 text-xs text-gray-500">
-                綜合評分: {data.recommendation.overall_score.toFixed(0)}/100
-              </div>
-            )}
           </div>
         </div>
       </div>
