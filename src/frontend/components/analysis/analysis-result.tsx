@@ -180,9 +180,84 @@ export function AnalysisResult({ data, type }: AnalysisResultProps) {
             </div>
             <div className="space-y-2 text-sm">
               {data.valuation_methods.map((method, index) => {
-                // 根據信心度計算估算權重
-                const totalConfidence = data.valuation_methods.reduce((sum, m) => sum + m.confidence_level, 0)
-                const estimatedWeight = (method.confidence_level / totalConfidence) * 100
+                // 計算實際的標準化權重（與後端邏輯一致）
+                const companyProfile = {
+                  sector: ('raw_api_data' in data && data.raw_api_data && 'stock_data' in data.raw_api_data && (data.raw_api_data as any).stock_data?.sector) || 'Technology',
+                  market_cap: ('raw_api_data' in data && data.raw_api_data && 'stock_data' in data.raw_api_data && (data.raw_api_data as any).stock_data?.market_cap) || 0,
+                  isLargeCap: (('raw_api_data' in data && data.raw_api_data && 'stock_data' in data.raw_api_data && (data.raw_api_data as any).stock_data?.market_cap) || 0) > 10e9,
+                  isMegaCap: (('raw_api_data' in data && data.raw_api_data && 'stock_data' in data.raw_api_data && (data.raw_api_data as any).stock_data?.market_cap) || 0) > 200e9
+                }
+                
+                // 計算所有方法的未標準化權重
+                const allMethodWeights = data.valuation_methods.map(m => {
+                  const getSectorSpecificWeights = (sector: string, method: string, isLargeCap: boolean, isMegaCap: boolean) => {
+                    // 簡化版本的行業權重查找
+                    const sectorConfigs: Record<string, Record<string, number>> = {
+                      'Technology': {
+                        'discounted_cash_flow': isLargeCap ? 1.3 : 1.0,
+                        'comparable_companies_analysis': 1.2,
+                        'precedent_transactions_analysis': isMegaCap ? 0.8 : 1.1,
+                        'asset_based_valuation': 0.3
+                      },
+                      'Financial Services': {
+                        'discounted_cash_flow': 0.8,
+                        'comparable_companies_analysis': 1.4,
+                        'precedent_transactions_analysis': 1.2,
+                        'asset_based_valuation': 1.1
+                      },
+                      'Healthcare': {
+                        'discounted_cash_flow': 1.4,
+                        'comparable_companies_analysis': 1.1,
+                        'precedent_transactions_analysis': 1.0,
+                        'asset_based_valuation': 0.7
+                      },
+                      'Utilities': {
+                        'discounted_cash_flow': 1.6,
+                        'comparable_companies_analysis': 1.0,
+                        'precedent_transactions_analysis': 0.8,
+                        'asset_based_valuation': 1.2
+                      }
+                    }
+                    return sectorConfigs[sector]?.[method] || 1.0
+                  }
+                  
+                  const coefficient = getSectorSpecificWeights(companyProfile.sector, m.method, companyProfile.isLargeCap, companyProfile.isMegaCap)
+                  return m.confidence_level * coefficient
+                })
+                
+                const totalRawWeight = allMethodWeights.reduce((sum, w) => sum + w, 0)
+                const currentMethodRawWeight = method.confidence_level * getSectorSpecificWeights(companyProfile.sector, method.method, companyProfile.isLargeCap, companyProfile.isMegaCap)
+                const actualWeight = (currentMethodRawWeight / totalRawWeight) * 100
+                
+                const getSectorSpecificWeights = (sector: string, method: string, isLargeCap: boolean, isMegaCap: boolean) => {
+                  const sectorConfigs: Record<string, Record<string, number>> = {
+                    'Technology': {
+                      'discounted_cash_flow': isLargeCap ? 1.3 : 1.0,
+                      'comparable_companies_analysis': 1.2,
+                      'precedent_transactions_analysis': isMegaCap ? 0.8 : 1.1,
+                      'asset_based_valuation': 0.3
+                    },
+                    'Financial Services': {
+                      'discounted_cash_flow': 0.8,
+                      'comparable_companies_analysis': 1.4,
+                      'precedent_transactions_analysis': 1.2,
+                      'asset_based_valuation': 1.1
+                    },
+                    'Healthcare': {
+                      'discounted_cash_flow': 1.4,
+                      'comparable_companies_analysis': 1.1,
+                      'precedent_transactions_analysis': 1.0,
+                      'asset_based_valuation': 0.7
+                    },
+                    'Utilities': {
+                      'discounted_cash_flow': 1.6,
+                      'comparable_companies_analysis': 1.0,
+                      'precedent_transactions_analysis': 0.8,
+                      'asset_based_valuation': 1.2
+                    }
+                  }
+                  return sectorConfigs[sector]?.[method] || 1.0
+                }
                 
                 const getMethodShortName = (methodName: string) => {
                   const mapping: Record<string, string> = {
@@ -207,7 +282,7 @@ export function AnalysisResult({ data, type }: AnalysisResultProps) {
                         {formatCurrency(method.target_price)}
                       </div>
                       <div className="text-xs text-blue-600">
-                        權重 ≈ {estimatedWeight.toFixed(0)}% (信心度: {(method.confidence_level * 100).toFixed(0)}%)
+                        實際權重: {actualWeight.toFixed(1)}% (信心度: {(method.confidence_level * 100).toFixed(0)}%)
                       </div>
                     </div>
                   </div>
@@ -222,7 +297,7 @@ export function AnalysisResult({ data, type }: AnalysisResultProps) {
                 </span>
               </div>
               <div className="text-xs text-blue-600 mt-1">
-                * 權重基於各估值方法的信心度和適用性動態調整
+                * 權重已標準化，總和=100%，基於信心度×行業係數計算
               </div>
               
               {/* Method Suitability Analysis */}
@@ -467,33 +542,102 @@ export function AnalysisResult({ data, type }: AnalysisResultProps) {
                   </div>
                 </div>
                 
-                {/* Weight Calculation Example */}
+                {/* Real-time Weight Calculation */}
                 <div className="mt-3 p-2 bg-blue-25 rounded border border-blue-100">
                   <div className="text-xs text-blue-800 font-medium mb-2">
-                    📋 實際權重計算範例 (假設Technology行業):
+                    📋 實際權重計算過程 ({companyProfile.sector}行業):
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs text-blue-700">
-                    <div>
-                      <div className="font-medium">Step 1: 係數 × 信心度</div>
-                      <div>DCF: 1.3 × 80% = 1.04</div>
-                      <div>CCA: 1.2 × 88% = 1.06</div>
-                      <div>PTA: 0.8 × 65% = 0.52</div>
-                      <div className="border-t border-blue-200 mt-1 pt-1">
-                        <strong>總和: 2.62</strong>
+                  
+                  {(() => {
+                    // 計算實際的權重分配
+                    const methodCalcs = data.valuation_methods.map(method => {
+                      const sectorWeight = getSectorSpecificWeights(
+                        companyProfile.sector, 
+                        method.method, 
+                        companyProfile.isLargeCap, 
+                        companyProfile.isMegaCap
+                      )
+                      
+                      // 提取數值權重係數
+                      const coefficientMatch = sectorWeight.weight.match(/\(([\d.]+)x\)/)
+                      const coefficient = coefficientMatch ? parseFloat(coefficientMatch[1]) : 1.0
+                      
+                      // 未標準化權重 = 信心度 × 行業係數
+                      const rawWeight = method.confidence_level * coefficient
+                      
+                      const getMethodShortName = (methodName: string) => {
+                        const mapping: Record<string, string> = {
+                          'comparable_companies_analysis': 'CCA',
+                          'discounted_cash_flow': 'DCF',
+                          'precedent_transactions_analysis': 'PTA',
+                          'asset_based_valuation': '資產法'
+                        }
+                        return mapping[methodName] || methodName
+                      }
+                      
+                      return {
+                        name: getMethodShortName(method.method),
+                        confidence: method.confidence_level,
+                        coefficient,
+                        rawWeight,
+                        targetPrice: method.target_price
+                      }
+                    })
+                    
+                    // 計算總權重
+                    const totalRawWeight = methodCalcs.reduce((sum, calc) => sum + calc.rawWeight, 0)
+                    
+                    // 計算標準化權重
+                    const normalizedCalcs = methodCalcs.map(calc => ({
+                      ...calc,
+                      normalizedWeight: calc.rawWeight / totalRawWeight,
+                      normalizedPercent: (calc.rawWeight / totalRawWeight) * 100
+                    }))
+                    
+                    // 計算最終目標價驗證
+                    const calculatedTargetPrice = normalizedCalcs.reduce(
+                      (sum, calc) => sum + (calc.targetPrice * calc.normalizedWeight), 0
+                    )
+                    
+                    return (
+                      <div className="grid grid-cols-2 gap-2 text-xs text-blue-700">
+                        <div>
+                          <div className="font-medium">Step 1: 係數 × 信心度</div>
+                          {normalizedCalcs.map((calc, idx) => (
+                            <div key={idx}>
+                              {calc.name}: {calc.coefficient.toFixed(1)} × {(calc.confidence * 100).toFixed(0)}% = {calc.rawWeight.toFixed(2)}
+                            </div>
+                          ))}
+                          <div className="border-t border-blue-200 mt-1 pt-1">
+                            <strong>總和: {totalRawWeight.toFixed(2)}</strong>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="font-medium">Step 2: 標準化權重</div>
+                          {normalizedCalcs.map((calc, idx) => (
+                            <div key={idx}>
+                              {calc.name}: {calc.rawWeight.toFixed(2)}÷{totalRawWeight.toFixed(2)} = {calc.normalizedPercent.toFixed(1)}%
+                            </div>
+                          ))}
+                          <div className="border-t border-blue-200 mt-1 pt-1">
+                            <strong>總計: {normalizedCalcs.reduce((sum, calc) => sum + calc.normalizedPercent, 0).toFixed(1)}%</strong>
+                          </div>
+                        </div>
+                        <div className="col-span-2 mt-2 pt-2 border-t border-blue-200">
+                          <div className="font-medium text-blue-800">Step 3: 最終目標價驗證</div>
+                          <div className="text-xs">
+                            計算結果: ${calculatedTargetPrice.toFixed(2)} 
+                            <span className="ml-2 text-blue-600">
+                              (系統目標價: ${data.target_price.toFixed(2)})
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <div className="font-medium">Step 2: 標準化權重</div>
-                      <div>DCF: 1.04÷2.62 = 39.7%</div>
-                      <div>CCA: 1.06÷2.62 = 40.5%</div>
-                      <div>PTA: 0.52÷2.62 = 19.8%</div>
-                      <div className="border-t border-blue-200 mt-1 pt-1">
-                        <strong>總計: 100.0%</strong>
-                      </div>
-                    </div>
-                  </div>
+                    )
+                  })()}
+                  
                   <div className="mt-2 text-xs text-blue-600">
-                    💡 這確保了各方法權重合理分配且總和為1
+                    💡 權重已標準化，總和嚴格等於100%，確保加權平均數學正確性
                   </div>
                 </div>
               </div>
