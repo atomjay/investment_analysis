@@ -105,12 +105,12 @@ export function AnalysisResult({ data, type }: AnalysisResultProps) {
               getRecommendationColor(data.recommendation.type)
             }`}>
               {data.recommendation.display_name}
-              {'overall_score' in data.recommendation && (
-                <span className="ml-2 text-xs">
-                  ({(data.recommendation.overall_score * 100).toFixed(0)})
-                </span>
-              )}
             </div>
+            {'overall_score' in data.recommendation && data.recommendation.overall_score && (
+              <div className="mt-2 text-xs text-gray-500">
+                綜合評分: {data.recommendation.overall_score.toFixed(0)}/100
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -165,6 +165,102 @@ export function AnalysisResult({ data, type }: AnalysisResultProps) {
                 </motion.div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Weighted Average Calculation Logic */}
+      {'valuation_methods' in data && data.valuation_methods && data.valuation_methods.length > 1 && (
+        <div className="p-6 border-b border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <CurrencyDollarIcon className="w-5 h-5 text-blue-600 mr-2" />
+            目標價格計算邏輯
+          </h3>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="text-sm text-blue-900 mb-3">
+              <strong>加權平均計算公式：</strong>
+            </div>
+            <div className="bg-white rounded p-3 mb-3 font-mono text-sm">
+              最終目標價 = (CCA價格 × CCA權重) + (DCF價格 × DCF權重) + (PTA價格 × PTA權重)
+            </div>
+            <div className="space-y-2 text-sm">
+              {data.valuation_methods.map((method, index) => {
+                // 根據信心度計算估算權重
+                const totalConfidence = data.valuation_methods.reduce((sum, m) => sum + m.confidence_level, 0)
+                const estimatedWeight = (method.confidence_level / totalConfidence) * 100
+                
+                const getMethodShortName = (methodName: string) => {
+                  const mapping: Record<string, string> = {
+                    'comparable_companies_analysis': 'CCA',
+                    'discounted_cash_flow': 'DCF',
+                    'precedent_transactions_analysis': 'PTA',
+                    'asset_based_valuation': '資產基礎法'
+                  }
+                  return mapping[methodName] || methodName
+                }
+                
+                return (
+                  <div key={index} className="flex items-center justify-between py-2 border-b border-blue-100 last:border-b-0">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+                      <span className="font-medium text-blue-900">
+                        {getMethodShortName(method.method)}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-blue-900 font-medium">
+                        {formatCurrency(method.target_price)}
+                      </div>
+                      <div className="text-xs text-blue-600">
+                        權重 ≈ {estimatedWeight.toFixed(0)}% (信心度: {(method.confidence_level * 100).toFixed(0)}%)
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="mt-4 pt-3 border-t border-blue-200">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-blue-900">最終計算結果：</span>
+                <span className="text-lg font-bold text-blue-900">
+                  {formatCurrency(data.target_price)}
+                </span>
+              </div>
+              <div className="text-xs text-blue-600 mt-1">
+                * 權重基於各估值方法的信心度動態調整
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Overall Score Calculation Logic */}
+      {'overall_score' in data.recommendation && data.recommendation.overall_score && (
+        <div className="p-6 border-b border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <SparklesIcon className="w-5 h-5 text-purple-600 mr-2" />
+            綜合評分計算邏輯
+          </h3>
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <div className="text-sm text-purple-900 mb-3">
+              <strong>評分公式 (0-100分)：</strong>
+            </div>
+            <div className="bg-white rounded p-3 mb-3 font-mono text-sm">
+              綜合評分 = 基礎評分(50) + 買入理由加分 - 賣出理由扣分 + 信心度調整
+            </div>
+            
+            {/* 最終結果 */}
+            <div className="mt-4 pt-3 border-t border-purple-200">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-purple-900">最終綜合評分:</span>
+                <span className="text-xl font-bold text-purple-900">
+                  {data.recommendation.overall_score.toFixed(0)}/100
+                </span>
+              </div>
+              <div className="mt-2 text-xs text-purple-600">
+                <strong>評分標準:</strong> 80+ 強烈買入 | 65+ 買入 | 35-65 持有 | 20-35 賣出 | 20- 強烈賣出
+              </div>
+            </div>
           </div>
         </div>
       )}
