@@ -33,7 +33,7 @@ class RecommendationEngine:
             InvestmentRecommendation: 投資建議
         """
         # 計算綜合目標價格
-        consensus_target_price = self._calculate_consensus_target_price(valuation_results)
+        consensus_target_price = self._calculate_consensus_target_price(valuation_results, stock_data)
         
         # 計算潛在回報
         potential_return = ((consensus_target_price - stock_data.price) / stock_data.price) * 100
@@ -73,12 +73,38 @@ class RecommendationEngine:
             overall_score=overall_score
         )
     
-    def _calculate_consensus_target_price(self, valuation_results: List[ValuationResult]) -> float:
-        """計算共識目標價格"""
+    def _calculate_consensus_target_price(self, valuation_results: List[ValuationResult], stock_data: StockData = None) -> float:
+        """
+        計算共識目標價格 - 基於方法適用性的智能權重分配
+        考慮公司特性和估值方法的適用性
+        """
         if not valuation_results:
             return 0.0
         
-        # 根據信心水平加權平均
+        # 獲取第一個結果中的股票信息來確定公司特性
+        if valuation_results:
+            # 基於方法適用性調整權重
+            adjusted_weights = self._calculate_method_suitability_weights(valuation_results, stock_data)
+            
+            weighted_sum = 0.0
+            total_weight = 0.0
+            
+            for result in valuation_results:
+                # 結合信心水平和方法適用性
+                base_confidence = result.confidence_level
+                suitability_weight = adjusted_weights.get(result.method.value, 1.0)
+                
+                # 最終權重 = 信心水平 × 方法適用性權重
+                final_weight = base_confidence * suitability_weight
+                
+                weighted_sum += result.target_price * final_weight
+                total_weight += final_weight
+            
+            return weighted_sum / total_weight if total_weight > 0 else statistics.mean(
+                [r.target_price for r in valuation_results]
+            )
+        
+        # 備用方案：簡單的信心水平加權
         weighted_sum = 0.0
         total_weight = 0.0
         
@@ -90,6 +116,133 @@ class RecommendationEngine:
         return weighted_sum / total_weight if total_weight > 0 else statistics.mean(
             [r.target_price for r in valuation_results]
         )
+    
+    def _calculate_method_suitability_weights(self, valuation_results: List[ValuationResult], stock_data: StockData = None) -> Dict[str, float]:
+        """
+        基於行業特性和公司特徵計算估值方法適用性權重
+        針對不同行業提供專門的權重分配策略
+        """
+        method_weights = {}
+        
+        # 獲取行業信息
+        sector = getattr(stock_data, 'sector', 'Unknown') if stock_data else 'Unknown'
+        market_cap = getattr(stock_data, 'market_cap', 0) if stock_data else 0
+        
+        # 行業特定權重分配矩陣
+        sector_weights = self._get_sector_specific_weights(sector, market_cap)
+        
+        # 檢查現有的估值方法
+        existing_methods = {result.method.value for result in valuation_results}
+        
+        # 為每個存在的方法分配權重
+        for method in existing_methods:
+            method_weights[method] = sector_weights.get(method, 1.0)
+        
+        return method_weights
+    
+    def _get_sector_specific_weights(self, sector: str, market_cap: float) -> Dict[str, float]:
+        """
+        獲取行業特定的估值方法權重
+        基於不同行業的特性和商業模式調整權重
+        """
+        # 定義公司規模係數
+        is_large_cap = market_cap > 10e9  # 大於100億美元
+        is_mega_cap = market_cap > 200e9  # 大於2000億美元
+        
+        # 行業特定權重配置
+        sector_weight_config = {
+            "Technology": {
+                # 科技業：重視未來成長和創新，但現金流可能不穩定
+                "discounted_cash_flow": 1.3 if is_large_cap else 1.0,
+                "comparable_companies_analysis": 1.2,  # 科技股比較活躍
+                "precedent_transactions_analysis": 0.8 if is_mega_cap else 1.1,  # 大型科技公司併購較少，小型較多
+                "asset_based_valuation": 0.3  # 科技公司無形資產為主
+            },
+            
+            "Healthcare": {
+                # 醫療保健：現金流穩定，但研發週期長
+                "discounted_cash_flow": 1.4,
+                "comparable_companies_analysis": 1.1,
+                "precedent_transactions_analysis": 1.0,  # 醫療併購較常見
+                "asset_based_valuation": 0.7
+            },
+            
+            "Financial Services": {
+                # 金融服務：特殊的商業模式，DCF較複雜
+                "discounted_cash_flow": 0.8,  # 金融業DCF模型複雜
+                "comparable_companies_analysis": 1.4,  # 同業比較最重要
+                "precedent_transactions_analysis": 1.2,  # 金融併購案例豐富
+                "asset_based_valuation": 1.1  # 帳面價值重要
+            },
+            
+            "Utilities": {
+                # 公用事業：現金流極穩定，適合DCF
+                "discounted_cash_flow": 1.6,  # 最適合DCF的行業
+                "comparable_companies_analysis": 1.0,
+                "precedent_transactions_analysis": 0.8,
+                "asset_based_valuation": 1.2  # 資產密集型行業
+            },
+            
+            "Energy": {
+                # 能源：週期性強，現金流波動大
+                "discounted_cash_flow": 0.9,  # 現金流難預測
+                "comparable_companies_analysis": 1.3,  # 週期性比較重要
+                "precedent_transactions_analysis": 1.2,  # 能源併購活躍
+                "asset_based_valuation": 1.3  # 資源和資產價值重要
+            },
+            
+            "Consumer Staples": {
+                # 消費必需品：現金流穩定，防禦性強
+                "discounted_cash_flow": 1.5,
+                "comparable_companies_analysis": 1.1,
+                "precedent_transactions_analysis": 0.9,
+                "asset_based_valuation": 0.8
+            },
+            
+            "Consumer Discretionary": {
+                # 消費可選：週期性，依賴經濟環境
+                "discounted_cash_flow": 1.2,
+                "comparable_companies_analysis": 1.3,  # 市場情緒影響大
+                "precedent_transactions_analysis": 1.0,
+                "asset_based_valuation": 0.7
+            },
+            
+            "Industrials": {
+                # 工業：現金流相對穩定，資產重要
+                "discounted_cash_flow": 1.3,
+                "comparable_companies_analysis": 1.1,
+                "precedent_transactions_analysis": 1.0,
+                "asset_based_valuation": 1.0
+            },
+            
+            "Materials": {
+                # 原材料：商品週期性強
+                "discounted_cash_flow": 0.9,
+                "comparable_companies_analysis": 1.3,
+                "precedent_transactions_analysis": 1.1,
+                "asset_based_valuation": 1.2
+            },
+            
+            "Real Estate": {
+                # 房地產：資產價值和現金流並重
+                "discounted_cash_flow": 1.2,
+                "comparable_companies_analysis": 1.2,
+                "precedent_transactions_analysis": 1.1,
+                "asset_based_valuation": 1.4  # 資產價值最重要
+            }
+        }
+        
+        # 獲取行業特定權重，如果行業不在配置中則使用默認權重
+        if sector in sector_weight_config:
+            return sector_weight_config[sector]
+        else:
+            # 默認權重 - 適用於一般公司
+            return {
+                "discounted_cash_flow": 1.2,
+                "comparable_companies_analysis": 1.0,
+                "precedent_transactions_analysis": 0.8,
+                "asset_based_valuation": 0.7
+            }
     
     def _assess_risk_level(self, stock_data: StockData, valuation_results: List[ValuationResult]) -> str:
         """評估風險等級"""

@@ -222,7 +222,365 @@ export function AnalysisResult({ data, type }: AnalysisResultProps) {
                 </span>
               </div>
               <div className="text-xs text-blue-600 mt-1">
-                * 權重基於各估值方法的信心度動態調整
+                * 權重基於各估值方法的信心度和適用性動態調整
+              </div>
+              
+              {/* Method Suitability Analysis */}
+              <div className="mt-4 p-3 bg-blue-100 rounded-lg">
+                <div className="text-xs text-blue-900 font-medium mb-2">
+                  📊 估值方法適用性分析：
+                </div>
+                
+                {/* Company Profile Display */}
+                {('raw_api_data' in data && data.raw_api_data && 'stock_data' in data.raw_api_data && data.raw_api_data.stock_data) && (
+                  <div className="mb-3 p-2 bg-blue-50 rounded border border-blue-200">
+                    <div className="text-xs text-blue-800">
+                      <strong>分析標的：</strong>
+                      {(data.raw_api_data as any).stock_data.sector || 'Unknown'} 行業 | 
+                      市值 ${(((data.raw_api_data as any).stock_data.market_cap || 0) / 1e9).toFixed(1)}B |
+                      {((data.raw_api_data as any).stock_data.market_cap || 0) > 200e9 ? ' 超大型股' : 
+                       ((data.raw_api_data as any).stock_data.market_cap || 0) > 10e9 ? ' 大型股' : ' 中小型股'}
+                    </div>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 gap-2 text-xs text-blue-800">
+                  {data.valuation_methods.map((method, idx) => {
+                    const getSuitabilityAnalysis = (methodType: string) => {
+                      // 動態獲取公司行業和規模信息
+                      const companyProfile = {
+                        sector: ('raw_api_data' in data && data.raw_api_data && 'stock_data' in data.raw_api_data && (data.raw_api_data as any).stock_data?.sector) || 'Technology',
+                        market_cap: ('raw_api_data' in data && data.raw_api_data && 'stock_data' in data.raw_api_data && (data.raw_api_data as any).stock_data?.market_cap) || 0,
+                        isLargeCap: (('raw_api_data' in data && data.raw_api_data && 'stock_data' in data.raw_api_data && (data.raw_api_data as any).stock_data?.market_cap) || 0) > 10e9,
+                        isMegaCap: (('raw_api_data' in data && data.raw_api_data && 'stock_data' in data.raw_api_data && (data.raw_api_data as any).stock_data?.market_cap) || 0) > 200e9
+                      }
+                      
+                      const getSectorSpecificWeights = (sector: string, method: string, isLargeCap: boolean, isMegaCap: boolean) => {
+                        const sectorConfigs: Record<string, Record<string, any>> = {
+                          'Technology': {
+                            'discounted_cash_flow': { 
+                              weight: isLargeCap ? '高權重 (1.3x)' : '標準權重 (1.0x)', 
+                              reason: isLargeCap ? '大型科技公司現金流相對穩定，成長模式可預測' : '小型科技公司現金流較不穩定，成長不確定性高',
+                              rationale: '科技業重視未來成長潛力，大型公司DCF更可靠'
+                            },
+                            'comparable_companies_analysis': { 
+                              weight: '高權重 (1.2x)', 
+                              reason: '科技股市場活躍，投資者關注度高，同業比較參考豐富',
+                              rationale: '科技股估值倍數變化頻繁，市場情緒影響大'
+                            },
+                            'precedent_transactions_analysis': { 
+                              weight: isMegaCap ? '低權重 (0.8x)' : '中高權重 (1.1x)', 
+                              reason: isMegaCap ? '超大型科技公司少有整體併購案例' : '中小型科技公司併購較為活躍',
+                              rationale: '科技業併購頻繁，但規模越大併購案例越稀少'
+                            },
+                            'asset_based_valuation': { 
+                              weight: '極低權重 (0.3x)', 
+                              reason: '科技公司價值主要來自品牌、技術、數據等無形資產',
+                              rationale: '傳統資產估值無法反映科技公司核心價值'
+                            }
+                          },
+                          'Financial Services': {
+                            'discounted_cash_flow': { 
+                              weight: '中權重 (0.8x)', 
+                              reason: '金融業資本結構特殊，傳統DCF模型不完全適用',
+                              rationale: '銀行業需要特殊的股息貼現模型或ROE模型'
+                            },
+                            'comparable_companies_analysis': { 
+                              weight: '最高權重 (1.4x)', 
+                              reason: '金融業同質性高，P/B、ROE等指標比較意義重大',
+                              rationale: '監管統一，業務模式相似，同業比較最為有效'
+                            },
+                            'precedent_transactions_analysis': { 
+                              weight: '高權重 (1.2x)', 
+                              reason: '金融業併購重組頻繁，交易案例豐富',
+                              rationale: '監管推動整合，併購估值參考價值高'
+                            },
+                            'asset_based_valuation': { 
+                              weight: '中權重 (1.1x)', 
+                              reason: '帳面價值在金融業相對重要，資產質量是關鍵',
+                              rationale: '金融資產透明度高，帳面價值具有參考意義'
+                            }
+                          },
+                          'Healthcare': {
+                            'discounted_cash_flow': { 
+                              weight: '高權重 (1.4x)', 
+                              reason: '醫療公司現金流穩定，長期需求確定性高',
+                              rationale: '人口老化趨勢明確，醫療需求具長期可預測性'
+                            },
+                            'comparable_companies_analysis': { 
+                              weight: '中權重 (1.1x)', 
+                              reason: '醫療細分領域差異大，完全可比公司較少',
+                              rationale: '不同醫療領域商業模式和風險特性差異顯著'
+                            },
+                            'precedent_transactions_analysis': { 
+                              weight: '標準權重 (1.0x)', 
+                              reason: '醫療併購案例適中，技術和產品併購較多',
+                              rationale: '大型製藥公司經常收購創新技術和產品'
+                            },
+                            'asset_based_valuation': { 
+                              weight: '低權重 (0.7x)', 
+                              reason: '醫療公司價值主要在研發成果和專利',
+                              rationale: '智慧財產權和研發管線難以用傳統資產評估'
+                            }
+                          },
+                          'Utilities': {
+                            'discounted_cash_flow': { 
+                              weight: '最高權重 (1.6x)', 
+                              reason: '公用事業現金流極其穩定，是DCF估值的理想標的',
+                              rationale: '受監管保護，收入穩定可預測，適合長期現金流分析'
+                            },
+                            'comparable_companies_analysis': { 
+                              weight: '標準權重 (1.0x)', 
+                              reason: '公用事業公司同質性高，但地域差異影響比較',
+                              rationale: '業務模式相似但監管環境和服務區域不同'
+                            },
+                            'precedent_transactions_analysis': { 
+                              weight: '低權重 (0.8x)', 
+                              reason: '公用事業併購較少，多為監管主導的重組',
+                              rationale: '高度監管行業，併購需要政府批准，案例有限'
+                            },
+                            'asset_based_valuation': { 
+                              weight: '中權重 (1.2x)', 
+                              reason: '資產密集型行業，基礎設施資產價值重要',
+                              rationale: '發電廠、輸電網等實體資產構成主要價值基礎'
+                            }
+                          },
+                          'Energy': {
+                            'discounted_cash_flow': { 
+                              weight: '低權重 (0.9x)', 
+                              reason: '能源價格週期性強，長期現金流預測困難',
+                              rationale: '商品價格波動大，地緣政治風險高'
+                            },
+                            'comparable_companies_analysis': { 
+                              weight: '高權重 (1.3x)', 
+                              reason: '能源公司估值高度依賴商品價格週期',
+                              rationale: '週期性行業，同業比較能反映當前週期位置'
+                            },
+                            'precedent_transactions_analysis': { 
+                              weight: '中權重 (1.2x)', 
+                              reason: '能源行業整合活躍，併購案例較多',
+                              rationale: '規模經濟重要，行業整合持續進行'
+                            },
+                            'asset_based_valuation': { 
+                              weight: '高權重 (1.3x)', 
+                              reason: '石油儲量、礦產資源等實物資產價值重要',
+                              rationale: '自然資源和生產設施構成核心價值'
+                            }
+                          },
+                          'Consumer Staples': {
+                            'discounted_cash_flow': { 
+                              weight: '高權重 (1.5x)', 
+                              reason: '消費必需品需求穩定，現金流可預測性強',
+                              rationale: '防禦性行業，經濟週期影響相對較小'
+                            },
+                            'comparable_companies_analysis': { 
+                              weight: '中權重 (1.1x)', 
+                              reason: '品牌差異化程度高，比較需謹慎選擇',
+                              rationale: '雖然都是消費品，但品牌價值和市場定位差異大'
+                            },
+                            'precedent_transactions_analysis': { 
+                              weight: '低權重 (0.9x)', 
+                              reason: '大型消費品公司併購相對較少',
+                              rationale: '成熟行業，大型公司多採內生成長策略'
+                            },
+                            'asset_based_valuation': { 
+                              weight: '低權重 (0.8x)', 
+                              reason: '品牌價值無法在傳統資產中完全體現',
+                              rationale: '消費品牌的無形資產價值巨大'
+                            }
+                          }
+                        }
+                        
+                        return sectorConfigs[sector]?.[method] || { 
+                          weight: '標準權重 (1.0x)', 
+                          reason: '一般行業採用標準權重配置',
+                          rationale: '無特殊行業特性，使用均衡權重分配'
+                        }
+                      }
+                      
+                      const sectorWeight = getSectorSpecificWeights(companyProfile.sector, methodType, companyProfile.isLargeCap, companyProfile.isMegaCap)
+                      
+                      const methodSpecs: Record<string, any> = {
+                        'discounted_cash_flow': {
+                          pros: '理論最嚴謹，直接基於現金流產生能力',
+                          cons: '對終值和折現率參數敏感性高'
+                        },
+                        'comparable_companies_analysis': {
+                          pros: '快速簡便，反映當前市場情緒和共識',
+                          cons: '難找到完全可比公司，受市場波動影響'
+                        },
+                        'precedent_transactions_analysis': {
+                          pros: '基於實際交易價格，包含控制權溢價',
+                          cons: '缺乏相應規模和行業的併購案例'
+                        },
+                        'asset_based_valuation': {
+                          pros: '提供基礎資產價值參考底線',
+                          cons: '通常忽略品牌、技術等無形資產價值'
+                        }
+                      }
+                      
+                      return {
+                        weight: sectorWeight.weight,
+                        reason: sectorWeight.reason,
+                        rationale: sectorWeight.rationale,
+                        pros: methodSpecs[methodType]?.pros || '提供估值參考',
+                        cons: methodSpecs[methodType]?.cons || '方法有其局限性'
+                      }
+                    }
+                    
+                    const analysis = getSuitabilityAnalysis(method.method)
+                    const getMethodShortName = (methodName: string) => {
+                      const mapping: Record<string, string> = {
+                        'comparable_companies_analysis': 'CCA',
+                        'discounted_cash_flow': 'DCF',
+                        'precedent_transactions_analysis': 'PTA',
+                        'asset_based_valuation': '資產基礎法'
+                      }
+                      return mapping[methodName] || methodName
+                    }
+                    
+                    return (
+                      <div key={idx} className="bg-white rounded p-2 border border-blue-200">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="font-medium text-blue-900">
+                            {getMethodShortName(method.method)}
+                          </span>
+                          <span className="text-blue-700 font-bold text-xs">
+                            {analysis.weight}
+                          </span>
+                        </div>
+                        <div className="text-xs text-blue-700 space-y-1">
+                          <div><strong>權重原因：</strong>{analysis.reason}</div>
+                          <div><strong>行業邏輯：</strong>{analysis.rationale}</div>
+                          <div><strong>方法優勢：</strong>{analysis.pros}</div>
+                          <div><strong>方法局限：</strong>{analysis.cons}</div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="mt-3 pt-2 border-t border-blue-200 text-xs text-blue-700">
+                  <strong>權重計算：</strong>最終權重 = 信心度 × 方法適用性權重 × 標準化調整
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confidence Level Calculation Logic */}
+      {'valuation_methods' in data && data.valuation_methods && data.valuation_methods.length > 0 && (
+        <div className="p-6 border-b border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <ChartBarIcon className="w-5 h-5 text-green-600 mr-2" />
+            信心水平計算方法
+          </h3>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="text-sm text-green-900 mb-3">
+              <strong>採用評分卡機制 (0-100分制)：</strong>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {data.valuation_methods.map((method, index) => {
+                const getMethodName = (methodType: string) => {
+                  const mapping: Record<string, string> = {
+                    'comparable_companies_analysis': 'CCA相對估值法',
+                    'discounted_cash_flow': 'DCF現金流折現法',
+                    'precedent_transactions_analysis': 'PTA交易比率法',
+                    'asset_based_valuation': '資產基礎法'
+                  }
+                  return mapping[methodType] || methodType
+                }
+
+                const getCCAFactors = () => (
+                  <div className="space-y-2">
+                    <div className="text-xs text-green-800">
+                      <strong>CCA評分因子：</strong>
+                    </div>
+                    <div className="text-xs text-green-700 space-y-1">
+                      <div>• 可比公司數量 (0-20分)</div>
+                      <div>• 估值範圍窄度 (0-20分)</div>
+                      <div>• 數據完整性 (0-15分)</div>
+                      <div>• 行業穩定性 (0-15分)</div>
+                      <div>• 規模匹配度 (0-15分)</div>
+                      <div>• 方法可靠性 (0-15分)</div>
+                    </div>
+                  </div>
+                )
+
+                const getDCFFactors = () => (
+                  <div className="space-y-2">
+                    <div className="text-xs text-green-800">
+                      <strong>DCF評分因子：</strong>
+                    </div>
+                    <div className="text-xs text-green-700 space-y-1">
+                      <div>• 財務數據可靠性 (0-25分)</div>
+                      <div>• 假設參數合理性 (0-25分)</div>
+                      <div>• 敏感性分析 (0-20分)</div>
+                      <div>• 交叉驗證 (0-15分)</div>
+                      <div>• 行業適用性 (0-15分)</div>
+                    </div>
+                  </div>
+                )
+
+                const getPTAFactors = () => (
+                  <div className="space-y-2">
+                    <div className="text-xs text-green-800">
+                      <strong>PTA評分標準：</strong>
+                    </div>
+                    <div className="text-xs text-green-700">
+                      <div>• 固定信心度: 65%</div>
+                      <div>• 基於多重方法驗證</div>
+                    </div>
+                  </div>
+                )
+
+                const getFactorDetails = (methodType: string) => {
+                  switch (methodType) {
+                    case 'comparable_companies_analysis':
+                      return getCCAFactors()
+                    case 'discounted_cash_flow':
+                      return getDCFFactors()
+                    case 'precedent_transactions_analysis':
+                      return getPTAFactors()
+                    default:
+                      return (
+                        <div className="text-xs text-green-700">
+                          固定信心度評估
+                        </div>
+                      )
+                  }
+                }
+
+                return (
+                  <div key={index} className="bg-white border border-green-200 rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="font-medium text-green-900 text-sm">
+                        {getMethodName(method.method)}
+                      </div>
+                      <div className="text-green-700 font-bold">
+                        {(method.confidence_level * 100).toFixed(0)}%
+                      </div>
+                    </div>
+                    
+                    {getFactorDetails(method.method)}
+                    
+                    <div className="mt-3 pt-2 border-t border-green-100">
+                      <div className="text-xs text-green-600">
+                        <strong>計算說明：</strong> 
+                        {method.method === 'comparable_companies_analysis' || method.method === 'discounted_cash_flow' 
+                          ? '動態評分 - 基於實際數據質量和方法適用性'
+                          : '專家判斷 - 基於方法特性設定固定信心度'
+                        }
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            
+            <div className="mt-4 pt-3 border-t border-green-200">
+              <div className="text-xs text-green-700">
+                <strong>信心水平影響：</strong> 信心度越高的估值方法在加權平均計算中權重越大，最終影響目標價格的確定。
               </div>
             </div>
           </div>
