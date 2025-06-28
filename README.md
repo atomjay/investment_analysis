@@ -60,7 +60,7 @@
 
 ## 🏗️ 系統架構
 
-本系統採用經典的**前後端分離 (Client-Server) 架構**，透過 RESTful API 進行通訊，確保了高度的靈活性與可擴展性。
+本系統採用的**前後端分離 (Client-Server) 架構**，透過 RESTful API 進行通訊，確保了高度的靈活性與可擴展性。
 
 ```mermaid
 graph TD
