@@ -62,7 +62,7 @@ graph TD
         C -- "分派請求" --> D[分析引擎 AnalysisEngine];
         D -- "獲取數據" --> E[數據獲取器 DataFetcher];
         E -- "標準化" --> F[數據標準化器 DataNormalizer];
-        D -- "執行估值" --> G[估值分析器 (CCA, DCF)];
+        D -- "執行估值" --> G["估值分析器 (CCA, DCF)"];
         D -- "生成建議" --> H[推薦引擎 RecommendationEngine];
     end
 
